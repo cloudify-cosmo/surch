@@ -1,0 +1,17 @@
+organization: git_user\organizationi
+git_user: git-user
+git_password: git-pass
+local_path: '/home/haviv/ops/gitgrab/test'
+search_list:
+  -
+  -
+  -
+  #- '(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])'
+  #- '(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])'
+
+skipped_repo:
+  -
+  -
+  -
+  -
+  -
