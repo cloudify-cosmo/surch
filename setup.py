@@ -37,9 +37,17 @@ setup(
     long_description=read('README.rst'),
     packages=['surch'],
     include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'surch = surch.surch:main',
+        ]
+    },
     install_requires=[
-        "sh",
-        "pyyaml",
-        "requests",
+        "sh==1.11",
+        "pyyaml==3.11",
+        "requests==2.9.1",
+        "retrying==1.3.3",
+        "click==6.6",
+        "tinydb==3.1.3",
     ]
 )
