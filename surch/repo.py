@@ -17,10 +17,10 @@ import logging
 import subprocess
 from time import time
 
-import yaml
 import retrying
 from tinydb import TinyDB
-from . import logger
+
+from . import logger, utiles
 
 # This string is a template for blob_url to redirect you
 # for the problematic commit.
@@ -28,20 +28,20 @@ from . import logger
 BLOB_URL_TEMPLATE = 'https://github.com/{0}/{1}/blob/{2}/{3}'
 HOME_PATH = os.path.expanduser("~")
 DEFAULT_PATH = os.path.join(HOME_PATH, 'surch')
-LOG_PATH = os.path.join(HOME_PATH, 'problematic_commit.json')
+LOG_PATH = os.path.join(HOME_PATH, 'results.json')
 
 lgr = logger.init()
 
 
-def _calculate_performance_to_second(start, end):
-    """ Calculate the runnig time"""
-    return str(round(end - start, 3))
-
-
 class Repo(object):
-    def __init__(self, search_list, url, local_path=DEFAULT_PATH,
-                 log_path=LOG_PATH, verbose=False, quiet_git=True,
-                 org_used=False):
+    def __init__(
+            self,
+            search_list,                #
+            url,
+            local_path=DEFAULT_PATH,    #
+            log_path=LOG_PATH,          #
+            verbose=False,              #
+            quiet_git=True):            #
         """ Surch instance define var from CLI or config file
 
         :param search_list: list of secrets you want to search
@@ -69,20 +69,16 @@ class Repo(object):
     @classmethod
     def from_config_file(cls, config_file, verbose=False, quiet_git=True):
         """ Define vars from "config.yaml" file"""
-        with open(config_file) as config:
-            conf_vars = yaml.load(config.read())
-        conf_vars.setdefault('verbose', verbose)
-        conf_vars.setdefault('quiet_git', quiet_git)
+        conf_vars = utiles.from_config_file(config_file, verbose, quiet_git)
         return cls(**conf_vars)
 
-    def _clone_repo(self, repository_name=None,
-                    organization_name=None, url=None):
+    def _clone_repo(self, repository_name=None, organization_name=None):
         """ This method run clone or pull for the repo list
         :return: cloned repo
         """
         # TODO: api call that get the all data of repo
         start = time()
-        url = url or self.url
+        url = self.url
         self.repository_name =\
             repository_name or (url.rsplit('/', 1)[-1]).rsplit('.', 1)[0]
         self.organization_name = \
@@ -131,12 +127,10 @@ class Repo(object):
             search_strings = "{0} --or -e '{1}'".format(search_strings, string)
         return search_strings
 
-    def _find_problematic_commits_in_directory(self, string_to_search,
-                                               directory=None,
+    def _find_problematic_commits_in_directory(self, directory=None,
                                                repository_name=None,
                                                organization_name=None):
         """ Create list of all problematic commits"""
-        bad_files = []
         bad_files = []
         self.repository_name = repository_name or self.repository_name
         self.organization_name = organization_name or self.organization_name
@@ -144,7 +138,7 @@ class Repo(object):
         lgr.info('Now scan the {0} repository'.format(self.repository_name))
         for commit in self._get_all_commits_list(self.directory):
             bad_files.append(self._get_bad_files(self.directory, commit,
-                                                 string_to_search))
+                                                 self.search_list))
         self._write_to_db(bad_files)
 
     def _get_all_commits_list(self, path):
@@ -214,10 +208,47 @@ class Repo(object):
             lgr.info('Summary of all errors: \n{0}'.format(
                 '\n'.join(self.error_summary)))
 
-    def check_on_repository(self):
+    def _search(self):
         start = time()
         self._clone_repo()
-        self._find_problematic_commits_in_directory(self.search_list)
+        self._find_problematic_commits_in_directory()
         total = _calculate_performance_to_second(start, time())
         self._print_error_summary()
         lgr.debug('Total time: {0} seconds'.format(total))
+
+
+def _calculate_performance_to_second(start, end):
+    """ Calculate the runnig time"""
+    return str(round(end - start, 3))
+
+
+def _clone_or_pull_repository(search_list, url, repository_name,
+                              organization_name, local_path=DEFAULT_PATH,
+                              log_path=LOG_PATH, verbose=False, quiet_git=True):
+
+    repo = Repo(search_list=search_list, url=url, local_path=local_path,
+                log_path=log_path, verbose=verbose, quiet_git=quiet_git)
+
+    repo._clone_repo(repository_name=repository_name,
+                     organization_name=organization_name)
+
+
+def _find_strings_in_commits_from_repo(
+        search_list, url, directory, repository_name, organization_name,
+        local_path=DEFAULT_PATH, log_path=LOG_PATH,
+        verbose=False, quiet_git=True):
+
+    repo = Repo(search_list=search_list, url=url, local_path=local_path,
+                log_path=log_path, verbose=verbose, quiet_git=quiet_git)
+
+    repo._find_problematic_commits_in_directory(
+        directory=directory, repository_name=repository_name,
+        organization_name=organization_name)
+
+
+def repo_search(search_list, url, local_path=DEFAULT_PATH,
+           log_path=LOG_PATH, verbose=False, quiet_git=True):
+
+    repo = Repo(search_list=search_list, url=url, local_path=local_path,
+                log_path=log_path, verbose=verbose, quiet_git=quiet_git)
+    repo._search()

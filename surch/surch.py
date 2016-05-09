@@ -21,7 +21,7 @@ lgr = logger.init()
 
 HOME_PATH = os.path.expanduser("~")
 DEFAULT_PATH = os.path.join(HOME_PATH, 'surch')
-LOG_PATH = os.path.join(HOME_PATH, 'problematic_commit.json')
+LOG_PATH = os.path.join(HOME_PATH, 'results.json')
 
 
 @click.group()
@@ -29,8 +29,13 @@ def main():
     pass
 
 
-@click.command()
-@click.option('-S', '--search', required=True, multiple=True,
+@main.group()
+def repos():
+    pass
+
+
+@repos.command(name='args')
+@click.option('-S', '--strings', required=True, multiple=True,
               help='List of secrets you want to search.')
 @click.option('-u', '--url', required=True,
               help='Git http url.')
@@ -40,27 +45,39 @@ def main():
               help='Log file for bad commits')
 @click.option('-v', '--verbose', default=False, is_flag=True)
 @click.option('-q', '--quiet', default=True, is_flag=False)
-def repo(search, url, log, path, verbose, quiet):
-    """check single repository
-    :param search:
-    :param url:
-    :param log:
-    :param path:
-    :param verbose:
-    :param quiet:
-    :return:
-    """
+def repository_args(strings, url, log, path, verbose, quiet):
+    """check single repository"""
     logger.configure()
-    repository = repo.Repo(search_list=search, url=url, local_path=path,
-                           log_path=log,  verbose=verbose, quiet_git=quiet)
-    repository.check_on_repository()
+    repo.repo_search(search_list=strings, url=url, local_path=path, log_path=log,
+                verbose=verbose, quiet_git=quiet)
 
 
-@click.command()
+@repos.command(name='conf')
+@click.option('-c', '--config', required=True,
+              help='Config var file full path.')
+@click.option('-v', '--verbose', default=False, is_flag=True)
+@click.option('-q', '--quiet', default=False, is_flag=True)
+def repository_conf(config, verbose, quiet):
+    """ Validate config file."""
+    logger.configure()
+    config_file_extension = os.path.splitext(config)[1].lower()
+    if config_file_extension == '.yaml' or config_file_extension == '.yml':
+        repository = repo.Repo.from_config_file(config, verbose, quiet)
+        repository._search()
+    else:
+        lgr.error('Config file is not .YAML/.YML')
+
+
+@main.group()
+def org():
+    pass
+
+
+@org.command(name='args')
 @click.option('-S', '--search', required=True, multiple=True,
               help='List of secrets you want to search.')
 @click.option('-i', '--ignore', default=(' ', ' '), multiple=True,
-              help='List of repo you didn\'t want to check.')
+              help="List of repo you didn't want to check.")
 @click.option('-O', '--organization', required=True,
               help='Organization name.')
 @click.option('-U', '--user', required=True,
@@ -74,18 +91,16 @@ def repo(search, url, log, path, verbose, quiet):
 @click.option('-v', '--verbose', default=False, is_flag=True)
 @click.option('-q', '--quiet', default=False, is_flag=True)
 def organization_args(search, ignore, organization, user,
-         password, log, path, verbose, quiet):
+                      password, log, path, verbose, quiet):
     """ No config file, manual surch"""
     logger.configure()
-    org = organization.Organization(search_list=search, skipped_repo=ignore,
-                                    organization=organization, git_user=user,
-                                    git_password=password, local_path=path,
-                                    log_path=log, verbose=verbose,
-                                    quiet_git=quiet)
-    org.check_on_organization()
+    organization.search(search_list=search, skipped_repo=ignore,
+                        organization=organization, git_user=user,
+                        git_password=password, local_path=path, log_path=log,
+                        verbose=verbose, quiet_git=quiet)
 
 
-@click.command()
+@org.command(name='conf')
 @click.option('-c', '--config', required=True,
               help='Config var file full path.')
 @click.option('-v', '--verbose', default=False, is_flag=True)
@@ -93,13 +108,14 @@ def organization_args(search, ignore, organization, user,
 def organization_conf(config, verbose, quiet):
     """ Validate config file."""
     logger.configure()
-    file_extension = os.path.splitext(config)[1].lower()
-    if file_extension == '.yaml' or file_extension == '.yml':
-        org = organization.Organization.from_config_file(config, verbose, quiet)
-        org.check_on_organization()
+    config_file_extension = os.path.splitext(config)[1].lower()
+    if config_file_extension == '.yaml' or config_file_extension == '.yml':
+        organization_local = organization.Organization.from_config_file(config, verbose, quiet)
+        organization_local._search()
     else:
         lgr.error('Config file is not .YAML/.YML')
 
-main.add_command(repo)
+main.add_command(repository_args)
+main.add_command(repository_conf)
 main.add_command(organization_conf)
 main.add_command(organization_args)

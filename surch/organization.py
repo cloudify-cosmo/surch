@@ -16,15 +16,10 @@
 import os
 import time
 import logging
-# import subprocess
 
-import yaml
-# import click
-# import retrying
 import requests
-from tinydb import TinyDB
 
-from . import logger, repo
+from . import logger, repo, utiles
 
 # This strings is for getting the repo git url list , it get organization,
 #  repository_per_page vars
@@ -38,23 +33,24 @@ BLOB_URL_TEMPLATE = 'https://github.com/{0}/{1}/blob/{2}/{3}'
 API_URL_ORGANIZATION_DETAILS = 'https://api.github.com/orgs/{0}'
 HOME_PATH = os.path.expanduser("~")
 DEFAULT_PATH = os.path.join(HOME_PATH, 'surch')
-LOG_PATH = os.path.join(HOME_PATH, 'problematic_commit.json')
+LOG_PATH = os.path.join(HOME_PATH, 'results.json')
 
 lgr = logger.init()
 
 
-
-
-def _calculate_performance_to_second(start, end):
-    """ Calculate the runnig time"""
-    return str(round(end - start, 3))
-
-
 class Organization(object):
 
-    def __init__(self, search_list, skipped_repo, organization, git_user,
-                 git_password, local_path=DEFAULT_PATH, log_path=LOG_PATH,
-                 verbose=False, quiet_git=True):
+    def __init__(
+            self,
+            search_list,                #
+            skipped_repo,
+            organization,
+            git_user,
+            git_password,
+            local_path=DEFAULT_PATH,    #
+            log_path=LOG_PATH,          #
+            verbose=False,              #
+            quiet_git=True):            #
         """ Surch instance define var from CLI or config file
 
         :param search_list: list of secrets you want to search
@@ -75,7 +71,7 @@ class Organization(object):
         self.error_summary = []
         self.git_user = git_user
         self.db = log_path
-        self.search_list = self._create_search_strings(list(search_list))
+        self.search_list = search_list
         self.ignore_repository = skipped_repo or []
         self.organization = organization
         self.git_password = git_password
@@ -91,14 +87,14 @@ class Organization(object):
     @classmethod
     def from_config_file(cls, config_file, verbose=False, quiet_git=True):
         """ Define vars from "config.yaml" file"""
-        with open(config_file, 'r') as config:
-            conf_vars = yaml.load(config.read())
-        conf_vars.setdefault('verbose', verbose)
-        conf_vars.setdefault('quiet_git', quiet_git)
+        conf_vars = utiles.from_config_file(config_file, verbose, quiet_git)
         return cls(**conf_vars)
 
-    def get_github_repo_list(self, url_type='clone_url',
-                             repository_type='public', repository_per_page=100):
+    def get_github_repo_list(
+            self,
+            url_type='clone_url',
+            repository_type='public',
+            repository_per_page=100):
         """ This method get from git hub the git url list for clonnig
 
         :param url_type: url type (git_url, ssh_url, clone_url, svn_url)
@@ -135,6 +131,24 @@ class Organization(object):
                 self.repository_specific_data = \
                     self._parase_json_list_of_dict(['name', url_type])
 
+    def search_in_commits(self):
+        """ This method search the secrets in the commits
+
+        :return: problematic_commits blob_url
+        """
+        start = time.time()
+        directories_list = self._get_directory_list()
+        for directory in directories_list:
+            self.repository_name = directory.split('/', -1)[-1]
+            repo._find_strings_in_commits_from_repo(
+                search_list=self.search_list, url=None, directory=directory,
+                repository_name=self.repository_name,
+                organization_name=self.organization, local_path=self.local_path,
+                log_path=self.db,verbose=self.verbose, quiet_git=self.quiet_git)
+
+        total = repo._calculate_performance_to_second(start, time.time())
+        lgr.debug('Search time: {0} seconds'.format(total))
+
     def _parase_json_list_of_dict(self, list_of_arguments):
         return [dict((key, data[key]) for key in list_of_arguments)
                 for data in self.all_data]
@@ -152,39 +166,14 @@ class Organization(object):
                  .format(self.organization))
         for repository_data in self.repository_specific_data:
             if repository_data['name'] not in self.ignore_repository:
-                repository = repo.Repo(search_list=self.search_list,
-                                       url=repository_data[url_type],
-                                       local_path=self.local_path,
-                                       log_path=self.db, verbose=self.verbose,
-                                       quiet_git=self.quiet_git, org_used=True)
-                repository._clone_repo(repository_data['name'],
-                                       self.organization,
-                                       repository_data[url_type])
-        total = _calculate_performance_to_second(start, time.time())
+                repo._clone_or_pull_repository(
+                    search_list=self.search_list, url=repository_data[url_type],
+                    repository_name=repository_data['name'],
+                    organization_name=self.organization,
+                    local_path=self.local_path, log_path=self.db,
+                    verbose=self.verbose, quiet_git=self.quiet_git)
+        total = repo._calculate_performance_to_second(start, time.time())
         lgr.debug('git clone\pull time: {0} seconds'.format(total))
-
-
-    def search_in_commits(self):
-        """ This method search the secrets in the commits
-
-        :return: problematic_commits blob_url
-        """
-        start = time.time()
-        directories_list = self._get_directory_list()
-        for directory in directories_list:
-            self.repository_name = directory.split('/', -1)[-1]
-            repository = repo.Repo(search_list=self.search_list,
-                                   url=None,
-                                   local_path=self.local_path,
-                                   log_path=self.db, verbose=self.verbose,
-                                   quiet_git=self.quiet_git, org_used=True)
-
-            repository._find_problematic_commits_in_directory(
-                self.search_list, directory, self.repository_name,
-                self.organization)
-        total = _calculate_performance_to_second(start, time.time())
-        lgr.debug('Search time: {0} seconds'.format(total))
-
 
     def _get_directory_list(self):
         """ Get list of the clone directory in the path"""
@@ -194,7 +183,6 @@ class Organization(object):
             if os.path.isdir(path):
                 full_path_list.append(path)
         return full_path_list
-
 
     def _create_search_strings(self, search_list):
         """ Create part of the grep command from search list"""
@@ -211,12 +199,23 @@ class Organization(object):
                 'Summary of all errors: \n{0}'.format(
                     '\n'.join(self.error_summary)))
 
-    def check_on_organization(self):
+    def _search(self):
         start = time.time()
         self.get_github_repo_list()
         self._clone_repositorys()
         self.search_in_commits()
-        total = _calculate_performance_to_second(start, time.time())
+        total = repo._calculate_performance_to_second(start, time.time())
         lgr.debug('Total time: {0} seconds'.format(total))
         self._print_error_summary()
+
+
+def search(search_list, skipped_repo, organization, git_user,
+           git_password, local_path=DEFAULT_PATH, log_path=LOG_PATH,
+           verbose=False, quiet_git=True):
+
+    org = Organization(search_list=search_list, skipped_repo=skipped_repo,
+                       organization=organization, git_user=git_user,
+                       git_password=git_password, local_path=local_path,
+                       log_path=log_path, verbose=verbose, quiet_git=quiet_git)
+    org._search()
 
