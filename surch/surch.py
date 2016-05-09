@@ -29,16 +29,16 @@ def main():
     pass
 
 
-@main.group()
-def repos():
+@main.group(name='repo')
+def repository():
+    """ Run surch on repository """
     pass
 
 
-@repos.command(name='args')
+@repository.command(name='args')
+@click.argument('url', required=True)
 @click.option('-S', '--strings', required=True, multiple=True,
               help='List of secrets you want to search.')
-@click.option('-u', '--url', required=True,
-              help='Git http url.')
 @click.option('-p', '--path', required=False, default=DEFAULT_PATH,
               help='This path contain the repos clone.')
 @click.option('-l', '--log', required=False, default=LOG_PATH,
@@ -52,7 +52,7 @@ def repository_args(strings, url, log, path, verbose, quiet):
                 verbose=verbose, quiet_git=quiet)
 
 
-@repos.command(name='conf')
+@repository.command(name='conf')
 @click.option('-c', '--config', required=True,
               help='Config var file full path.')
 @click.option('-v', '--verbose', default=False, is_flag=True)
@@ -70,16 +70,16 @@ def repository_conf(config, verbose, quiet):
 
 @main.group()
 def org():
+    """ Run surch on organization """
     pass
 
 
 @org.command(name='args')
+@click.argument('organization', required=True)
 @click.option('-S', '--search', required=True, multiple=True,
               help='List of secrets you want to search.')
 @click.option('-i', '--ignore', default=(' ', ' '), multiple=True,
               help="List of repo you didn't want to check.")
-@click.option('-O', '--organization', required=True,
-              help='Organization name.')
 @click.option('-U', '--user', required=True,
               help='Git user name for authenticate.')
 @click.password_option('-P', '--password', required=True,
@@ -115,7 +115,7 @@ def organization_conf(config, verbose, quiet):
     else:
         lgr.error('Config file is not .YAML/.YML')
 
-main.add_command(repository_args)
-main.add_command(repository_conf)
-main.add_command(organization_conf)
-main.add_command(organization_args)
+repository.add_command(repository_args)
+repository.add_command(repository_conf)
+org.add_command(organization_conf)
+org.add_command(organization_args)
