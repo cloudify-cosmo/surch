@@ -39,14 +39,13 @@ lgr = logger.init()
 
 
 class Organization(object):
-
     def __init__(
             self,
             search_list,
-            skipped_repo,
             organization,
             git_user,
             git_password,
+            skipped_repo=None,
             local_path=DEFAULT_PATH,
             log_path=LOG_PATH,
             verbose=False,
@@ -92,6 +91,7 @@ class Organization(object):
         self.verbose = verbose
 
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
+
 
     @classmethod
     def get_and_init_vars_from_config_file(
