@@ -69,14 +69,20 @@ class Organization(object):
         :type verbose: bool
         """
         self.error_summary = []
-        self.git_user = git_user
+        self.organization = organization
         self.db = log_path
         self.search_list = search_list
         self.ignore_repository = skipped_repo or []
-        if not organization or not git_user:
+        if not git_user or not git_user:
+
+            lgr.info('************************************'
+                     'ATTENSION************************************\n'
+                     ' You run without authunticate git allows'
+                     ' you to make up to 60 requests per hour')
             self.auth = False
         else:
-            self.organization = organization
+            self.auth = True
+            self.git_user = git_user
             self.git_password = git_password
         self.all_data = []
         if not os.path.isdir(local_path):
@@ -95,8 +101,8 @@ class Organization(object):
             quiet_git=True):
         """ Define vars from "config.yaml" file"""
         conf_vars = utils.get_and_init_vars_from_config_file(config_file,
-                                                              verbose,
-                                                              quiet_git)
+                                                             verbose,
+                                                             quiet_git)
         return cls(**conf_vars)
 
     def get_github_repo_list(
@@ -221,8 +227,8 @@ class Organization(object):
 def search(search_list, organization, git_user=None, git_password=None,
            skipped_repo=None, local_path=DEFAULT_PATH, log_path=LOG_PATH,
            verbose=False, quiet_git=True):
-    skipped_repo = skipped_repo or []
 
+    skipped_repo = skipped_repo or []
     org = Organization(search_list=search_list, skipped_repo=skipped_repo,
                        organization=organization, git_user=git_user,
                        git_password=git_password, local_path=local_path,

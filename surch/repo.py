@@ -36,12 +36,12 @@ lgr = logger.init()
 class Repo(object):
     def __init__(
             self,
-            search_list,                #
+            search_list,
             repo_url,
-            local_path=DEFAULT_PATH,    #
-            log_path=LOG_PATH,          #
-            verbose=False,              #
-            quiet_git=True):            #
+            local_path=DEFAULT_PATH,
+            log_path=LOG_PATH,
+            verbose=False,
+            quiet_git=True):
         """ Surch instance define var from CLI or config file
 
         :param search_list: list of secrets you want to search
@@ -198,7 +198,7 @@ class Repo(object):
         return name, mail, commit_time
 
     def _write_result(self, sha, files_name,
-                          user_name, user_mail, blob_url, commit_time):
+                      user_name, user_mail, blob_url, commit_time):
         self.db.insert({'organization_name': self.organization_name,
                         'repository_name': self.repository_name,
                         'commit_sha': sha,
