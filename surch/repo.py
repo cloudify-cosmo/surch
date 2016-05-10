@@ -20,7 +20,7 @@ from time import time
 import retrying
 from tinydb import TinyDB
 
-from . import logger, utiles
+from . import logger, utils
 
 # This string is a template for blob_url to redirect you
 # for the problematic commit.
@@ -37,7 +37,7 @@ class Repo(object):
     def __init__(
             self,
             search_list,                #
-            url,
+            repo_url,
             local_path=DEFAULT_PATH,    #
             log_path=LOG_PATH,          #
             verbose=False,              #
@@ -48,9 +48,9 @@ class Repo(object):
         :type search_list: (tupe, list)
         :param local_path: this path contain the repos clone
         :type local_path: basestring
-        :param url: git http url
+        :param repo_url: git http url
         example:"https://github.com/cloudify-cosmo/surch.git"
-        :type url: basestring
+        :type repo_url: basestring
         :param verbose: user verbose mode
         :type verbose: bool
         """
@@ -58,7 +58,7 @@ class Repo(object):
         self.db = TinyDB(
             log_path, sort_keys=True, indent=4, separators=(',', ': '))
         self.search_list = self._create_search_strings(list(search_list))
-        self.url = url
+        self.repo_url = repo_url
         if not os.path.isdir(local_path):
             os.makedirs(local_path)
         self.local_path = local_path
@@ -67,18 +67,21 @@ class Repo(object):
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
-    def from_config_file(cls, config_file, verbose=False, quiet_git=True):
+    def get_and_init_vars_from_config_file(cls, config_file,
+                                           verbose=False,
+                                           quiet_git=True):
         """ Define vars from "config.yaml" file"""
-        conf_vars = utiles.from_config_file(config_file, verbose, quiet_git)
+        conf_vars = utils.get_and_init_vars_from_config_file(
+            config_file, verbose, quiet_git)
         return cls(**conf_vars)
 
-    def _clone_repo(self, repository_name=None, organization_name=None):
+    def clone_repo(self, repository_name=None, organization_name=None):
         """ This method run clone or pull for the repo list
         :return: cloned repo
         """
         # TODO: api call that get the all data of repo
         start = time()
-        url = self.url
+        url = self.repo_url
         self.repository_name =\
             repository_name or (url.rsplit('/', 1)[-1]).rsplit('.', 1)[0]
         self.organization_name = \
@@ -86,8 +89,8 @@ class Repo(object):
 
         self.full_path = os.path.join(self.local_path, self.repository_name)
         self._clone_or_pull()
-        total = _calculate_performance_to_second(start, time())
-        lgr.debug('git clone\pull time: {0} seconds'.format(total))
+        total_time = utils.convert_to_seconds(start, time())
+        lgr.debug('git clone\pull time: {0} seconds'.format(total_time))
 
     @retrying.retry(stop_max_attempt_number=3)
     def _clone_or_pull(self):
@@ -109,7 +112,8 @@ class Repo(object):
             try:
                 lgr.info('Clone {0} repository.'.format(self.repository_name))
                 git_clone = subprocess.check_output(
-                    'git clone {0} {1} {2}'.format(self.quiet_git, self.url,
+                    'git clone {0} {1} {2}'.format(self.quiet_git,
+                                                   self.repo_url,
                                                    self.full_path), shell=True)
             except subprocess.CalledProcessError as git_error:
                 err = 'Error while run "git clone" {0} : {1}'.format(
@@ -127,19 +131,19 @@ class Repo(object):
             search_strings = "{0} --or -e '{1}'".format(search_strings, string)
         return search_strings
 
-    def _find_problematic_commits_in_directory(self, directory=None,
+    def search_strings_in_the_commits(self, directory=None,
                                                repository_name=None,
                                                organization_name=None):
         """ Create list of all problematic commits"""
-        bad_files = []
+        matched_files = []
         self.repository_name = repository_name or self.repository_name
         self.organization_name = organization_name or self.organization_name
         self.directory = directory or self.full_path
         lgr.info('Now scan the {0} repository'.format(self.repository_name))
         for commit in self._get_all_commits_list(self.directory):
-            bad_files.append(self._get_bad_files(self.directory, commit,
+            matched_files.append(self._get_matched_files(self.directory, commit,
                                                  self.search_list))
-        self._write_to_db(bad_files)
+        self._write_to_db(matched_files)
 
     def _get_all_commits_list(self, path):
         """ Get the sha(number) of the commit """
@@ -150,26 +154,29 @@ class Repo(object):
         except subprocess.CalledProcessError:
             return []
 
-    def _get_bad_files(self, directory, commit, string_to_search):
+    def _get_matched_files(self, directory, commit, string_to_search):
         """ Run git grep"""
         try:
-            bad_files = subprocess.check_output(
-                'git -C {0} grep -l -e {1} {2}'.format(directory,
-                                                       string_to_search,
-                                                       commit), shell=True)
-            return bad_files.splitlines()
+            matched_files = subprocess.check_output(
+                'git -C {0} grep -l -e {1} {2}'.format(
+                    directory, string_to_search, commit), shell=True)
+            return matched_files.splitlines()
         except subprocess.CalledProcessError:
             return []
 
-    def _write_to_db(self, bad_commits):
+    def _write_to_db(self, matcehd_commits):
         """ Create the blob_url from sha:filename and write to json"""
-        for bad_files in bad_commits:
-            for bad_file in bad_files:
+        for matched_files in matcehd_commits:
+            for match_file in matched_files:
                 try:
-                    sha, file_name = bad_file.rsplit(':', 1)
+                    sha, file_name = match_file.rsplit(':', 1)
                     blob_url = BLOB_URL_TEMPLATE.format(self.organization_name,
                                                         self.repository_name,
                                                         sha, file_name)
+                    user_name, user_mail, commit_time = self._get_user_details(
+                        sha, self.directory)
+                    self._write_result(sha, file_name, user_name, user_mail,
+                                           blob_url, commit_time)
                 except IndexError:
                     # The structre of the output is
                     # sha:filename
@@ -179,76 +186,81 @@ class Repo(object):
                     # and we need both sha and filename and when we don't \
                     #  get them we do pass
                     pass
-                user_name, user_mail = self._get_user_details(
-                    sha, self.directory)
-                self._write_dict_to_db(sha, file_name, user_name, user_mail,
-                                       blob_url)
 
     def _get_user_details(self, sha, directory):
-        git_log_command = "git -C {0} show -s  {1} |grep 'Author:'|" \
-                          "cut -d':' -f2|sort|uniq"
+        git_log_command = "git -C {0} show -s  {1}"
         user_details = subprocess.check_output(
             git_log_command.format(directory, sha), shell=True)
-        name = user_details.rsplit('<', 1)[0]
-        mail = (user_details.rsplit('<', 1)[1]).rsplit('>', 1)[0]
-        return name, mail
+        name = utils.find_string_between_strings(user_details, 'Author: ', ' <')
+        mail = utils.find_string_between_strings(user_details, '<', '>')
+        commit_time = utils.find_string_between_strings(
+            user_details, 'Date:   ', '+')
+        return name, mail, commit_time
 
-    def _write_dict_to_db(self, sha, files_name,
-                          user_name, user_mail, blob_url):
+    def _write_result(self, sha, files_name,
+                          user_name, user_mail, blob_url, commit_time):
         self.db.insert({'organization_name': self.organization_name,
                         'repository_name': self.repository_name,
                         'commit_sha': sha,
                         'file_name': files_name,
                         'user_name': user_name,
                         'user_mail': user_mail,
-                        'blob_url': blob_url})
+                        'blob_url': blob_url,
+                        'commit_time': commit_time})
 
-    def _print_error_summary(self):
-        if self.error_summary:
-            lgr.info('Summary of all errors: \n{0}'.format(
-                '\n'.join(self.error_summary)))
-
-    def _search(self):
+    def search(self):
         start = time()
-        self._clone_repo()
-        self._find_problematic_commits_in_directory()
-        total = _calculate_performance_to_second(start, time())
-        self._print_error_summary()
-        lgr.debug('Total time: {0} seconds'.format(total))
+        self.clone_repo()
+        self.search_strings_in_the_commits()
+        total_time = utils.convert_to_seconds(start, time())
+        utils.print_error_summary(self.error_summary, lgr)
+        lgr.debug('Total time: {0} seconds'.format(total_time))
 
 
-def _calculate_performance_to_second(start, end):
-    """ Calculate the runnig time"""
-    return str(round(end - start, 3))
+def clone_or_pull_repository(search_list, repo_url, repository_name,
+                             organization_name, local_path=DEFAULT_PATH,
+                             log_path=LOG_PATH, verbose=False, quiet_git=True):
+
+    repo = Repo(search_list=search_list, repo_url=repo_url,
+                local_path=local_path,log_path=log_path,
+                verbose=verbose, quiet_git=quiet_git)
+
+    repo.clone_repo(repository_name=repository_name,
+                    organization_name=organization_name)
 
 
-def _clone_or_pull_repository(search_list, url, repository_name,
-                              organization_name, local_path=DEFAULT_PATH,
-                              log_path=LOG_PATH, verbose=False, quiet_git=True):
+def find_strings_in_commits_from_local_repo(
+        search_list,
+        repo_url,
+        directory,
+        repository_name,
+        organization_name,
+        local_path=DEFAULT_PATH,
+        log_path=LOG_PATH,
+        verbose=False,
+        quiet_git=True):
 
-    repo = Repo(search_list=search_list, url=url, local_path=local_path,
-                log_path=log_path, verbose=verbose, quiet_git=quiet_git)
+    repo = Repo(search_list=search_list, repo_url=repo_url,
+                local_path=local_path, log_path=log_path,
+                verbose=verbose, quiet_git=quiet_git)
 
-    repo._clone_repo(repository_name=repository_name,
-                     organization_name=organization_name)
-
-
-def _find_strings_in_commits_from_repo(
-        search_list, url, directory, repository_name, organization_name,
-        local_path=DEFAULT_PATH, log_path=LOG_PATH,
-        verbose=False, quiet_git=True):
-
-    repo = Repo(search_list=search_list, url=url, local_path=local_path,
-                log_path=log_path, verbose=verbose, quiet_git=quiet_git)
-
-    repo._find_problematic_commits_in_directory(
+    repo.search_strings_in_the_commits(
         directory=directory, repository_name=repository_name,
         organization_name=organization_name)
 
 
-def repo_search(search_list, url, local_path=DEFAULT_PATH,
-           log_path=LOG_PATH, verbose=False, quiet_git=True):
+def search(
+        search_list,
+        repo_url,
+        local_path=DEFAULT_PATH,
+        log_path=LOG_PATH,
+        verbose=False,
+        quiet_git=True):
 
-    repo = Repo(search_list=search_list, url=url, local_path=local_path,
-                log_path=log_path, verbose=verbose, quiet_git=quiet_git)
-    repo._search()
+    repo = Repo(search_list=search_list,
+                repo_url=repo_url,
+                local_path=local_path,
+                log_path=log_path,
+                verbose=verbose,
+                quiet_git=quiet_git)
+    repo.search()
