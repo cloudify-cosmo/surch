@@ -16,9 +16,9 @@
 import yaml
 
 
-def get_and_init_vars_from_config_file(config_file, verbose=False,
-                                       quiet_git=True):
-    """ Define vars from "config.yaml" file"""
+def read_config_file(config_file, verbose=False, quiet_git=True):
+    """Define vars from "config.yaml" file
+    """
     with open(config_file, 'r') as config:
         conf_vars = yaml.load(config.read())
     conf_vars.setdefault('verbose', verbose)
@@ -27,14 +27,11 @@ def get_and_init_vars_from_config_file(config_file, verbose=False,
 
 
 def print_error_summary(error_summary, lgr):
-    if error_summary:
-        lgr.info(
-            'Summary of all errors: \n{0}'.format(
-                '\n'.join(error_summary)))
+        lgr.info('Summary of all errors: \n{0}'.format(
+            '\n'.join(error_summary)))
 
 
 def convert_to_seconds(start, end):
-    """ Calculate the runnig time"""
     return str(round(end - start, 3))
 
 

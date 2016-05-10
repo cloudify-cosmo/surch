@@ -19,21 +19,11 @@ from time import time
 
 import requests
 
-from . import logger, repo, utils
+from . import logger, repo, utils, constants
 
-# This strings is for getting the repo git url list , it get organization,
-#  repository_per_page vars
-API_URL_REPO_DETAILS = \
+REPO_DETAILS_API_URL = \
     'https://api.github.com/orgs/{0}/repos?type={1}&per_page={2}&page={3}'
-# This string is a template for blob_url to redirect you
-# for the problematic commit.
-# It get organization, repository_name, sha, file_name
-BLOB_URL_TEMPLATE = 'https://github.com/{0}/{1}/blob/{2}/{3}'
-# Get organization details
-API_URL_ORGANIZATION_DETAILS = 'https://api.github.com/orgs/{0}'
-HOME_PATH = os.path.expanduser("~")
-DEFAULT_PATH = os.path.join(HOME_PATH, 'surch')
-LOG_PATH = os.path.join(HOME_PATH, 'results.json')
+ORG_DETAILS_API_URL = 'https://api.github.com/orgs/{0}'
 
 lgr = logger.init()
 
@@ -45,53 +35,50 @@ class Organization(object):
             organization,
             git_user,
             git_password,
-            skipped_repo=None,
-            local_path=DEFAULT_PATH,
-            log_path=LOG_PATH,
+            repos_to_skip=None,
+            cloned_repos_path=constants.DEFAULT_PATH,
+            log_path=constants.RESULTS_PATH,
             verbose=False,
             quiet_git=True):
-        """ Surch instance define var from CLI or config file
+        """Surch instance define var from CLI or config file
 
         :param search_list: list of secrets you want to search
         :type search_list: (tupe, list)
-        :param skipped_repo: list of repo you didn't want to check
-        :type skipped_repo: (tupe, list)
+        :param repos_to_skip: list of repo you didn't want to check
+        :type repos_to_skip: (tupe, list)
         :param organization: organization name
         :type organization: basestring
         :param git_user: git user name for authenticate
         :type git_user: basestring
         :param git_password:git user password for authenticate
         :type git_password: basestring
-        :param local_path: this path contain the repos clone
-        :type local_path: basestring
+        :param cloned_repos_path: this path contain the repos clone
+        :type cloned_repos_path: basestring
         :param verbose: user verbose mode
         :type verbose: bool
         """
-        self.error_summary = []
+        self.results_summary = []
         self.organization = organization
         self.db = log_path
         self.search_list = search_list
-        self.ignore_repository = skipped_repo or []
+        self.repos_to_skip = repos_to_skip or []
         if not git_user or not git_user:
-
-            lgr.info('************************************'
-                     'ATTENSION************************************\n'
-                     ' You run without authunticate git allows'
-                     ' you to make up to 60 requests per hour')
+            lgr.warn(
+                'Choosing not to provide GitHub credentials limits '
+                'requests to GitHub to 60/h. This might affect cloning.')
             self.auth = False
         else:
             self.auth = True
             self.git_user = git_user
             self.git_password = git_password
-        self.all_data = []
-        if not os.path.isdir(local_path):
-            os.makedirs(local_path)
-        self.local_path = os.path.join(local_path, organization)
+        self.repository_data = []
+        if not os.path.isdir(cloned_repos_path):
+            os.makedirs(cloned_repos_path)
+        self.cloned_repos_path = os.path.join(cloned_repos_path, organization)
         self.quiet_git = '--quiet' if quiet_git else ''
         self.verbose = verbose
 
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
-
 
     @classmethod
     def get_and_init_vars_from_config_file(
@@ -99,7 +86,8 @@ class Organization(object):
             config_file,
             verbose=False,
             quiet_git=True):
-        """ Define vars from "config.yaml" file"""
+        """Define vars from "config.yaml" file
+        """
         conf_vars = utils.get_and_init_vars_from_config_file(config_file,
                                                              verbose,
                                                              quiet_git)
@@ -110,7 +98,7 @@ class Organization(object):
             url_type='clone_url',
             repository_type='public',
             repository_per_page=100):
-        """ This method get from git hub the git url list for clonnig
+        """This method get from GitHub the git url list for cloning
 
         :param url_type: url type (git_url, ssh_url, clone_url, svn_url)
         default:'clone_url'
@@ -124,15 +112,17 @@ class Organization(object):
         :type repository_per_page: int
         :return:
         """
+        lgr.info('Retrieving list of repositories for the organization...')
         if not self.auth:
-            all_data = requests.get(API_URL_ORGANIZATION_DETAILS.
+            all_data = requests.get(ORG_DETAILS_API_URL.
                                     format(self.organization))
         else:
-            all_data = requests.get(API_URL_ORGANIZATION_DETAILS.
+            all_data = requests.get(ORG_DETAILS_API_URL.
                                     format(self.organization),
                                     auth=(self.git_user, self.git_password))
 
-        repository_number = all_data.json()['{0}_repos'.format(repository_type)]
+        repository_number = \
+            all_data.json()['{0}_repos'.format(repository_type)]
         last_page_number = repository_number / repository_per_page
         if (repository_number % repository_per_page) > 0:
             # Adding 2 because 1 for the extra repos that mean more page,
@@ -142,25 +132,25 @@ class Organization(object):
             for page_num in range(1, last_page_number):
                 if not self.auth:
                     all_data = requests.get(
-                        API_URL_REPO_DETAILS.format(self.organization,
+                        REPO_DETAILS_API_URL.format(self.organization,
                                                     repository_type,
                                                     repository_per_page,
                                                     page_num))
                 else:
                     all_data = requests.get(
-                        API_URL_REPO_DETAILS.format(self.organization,
+                        REPO_DETAILS_API_URL.format(self.organization,
                                                     repository_type,
                                                     repository_per_page,
                                                     page_num),
                         auth=(self.git_user, self.git_password))
 
-                for repo in all_data.json():
-                    self.all_data.append(repo)
+                for repository in all_data.json():
+                    self.repository_data.append(repository)
                 self.repository_specific_data = \
-                    self._parase_json_list_of_dict(['name', url_type])
+                    self._parse_json_list_of_dict(['name', url_type])
 
     def _search_in_commits(self):
-        """ This method search the secrets in the commits
+        """This method search the secrets in the commits
 
         :return: problematic_commits blob_url
         """
@@ -169,21 +159,25 @@ class Organization(object):
         for directory in directories_list:
             self.repository_name = directory.split('/', -1)[-1]
             repo.find_strings_in_commits_from_local_repo(
-                search_list=self.search_list, repo_url=None,
-                directory=directory, repository_name=self.repository_name,
-                organization_name=self.organization, local_path=self.local_path,
-                log_path=self.db, verbose=self.verbose,
+                search_list=self.search_list,
+                repo_url=None,
+                directory=directory,
+                repository_name=self.repository_name,
+                organization_name=self.organization,
+                cloned_repos_path=self.cloned_repos_path,
+                log_path=self.db,
+                verbose=self.verbose,
                 quiet_git=self.quiet_git)
 
         total_time = utils.convert_to_seconds(start, time())
         lgr.debug('Search time: {0} seconds'.format(total_time))
 
-    def _parase_json_list_of_dict(self, list_of_arguments):
+    def _parse_json_list_of_dict(self, list_of_arguments):
         return [dict((key, data[key]) for key in list_of_arguments)
-                for data in self.all_data]
+                for data in self.repository_data]
 
-    def _clone_repositorys(self, url_type='clone_url'):
-        """ This method run clone or pull for the repo list
+    def _clone_repositories(self, url_type='clone_url'):
+        """This method run clone or pull for the repo list
 
         :param url_type: url type (git_url, ssh_url, clone_url, svn_url)
         default:'clone_url'
@@ -191,25 +185,26 @@ class Organization(object):
         :return: cloned repo
         """
         start = time()
-        lgr.info('Clone or pull from {0} organization or user'
-                 .format(self.organization))
         for repository_data in self.repository_specific_data:
-            if repository_data['name'] not in self.ignore_repository:
+            if repository_data['name'] not in self.repos_to_skip:
                 repo.clone_or_pull_repository(
-                    search_list=self.search_list,
                     repo_url=repository_data[url_type],
                     repository_name=repository_data['name'],
                     organization_name=self.organization,
-                    local_path=self.local_path, log_path=self.db,
+                    cloned_repos_path=self.cloned_repos_path, log_path=self.db,
                     verbose=self.verbose, quiet_git=self.quiet_git)
+            else:
+                lgr.info('Ignoring repos: {0}...'.format(
+                    ', '.join(self.repos_to_skip)))
         total_time = utils.convert_to_seconds(start, time())
         lgr.debug('git clone\pull time: {0} seconds'.format(total_time))
 
     def _get_directory_list(self):
-        """ Get list of the clone directory in the path"""
+        """Get list of the clone directory in the path
+        """
         full_path_list = []
-        for item in os.listdir(self.local_path):
-            path = os.path.join(self.local_path, item)
+        for item in os.listdir(self.cloned_repos_path):
+            path = os.path.join(self.cloned_repos_path, item)
             if os.path.isdir(path):
                 full_path_list.append(path)
         return full_path_list
@@ -217,21 +212,26 @@ class Organization(object):
     def search(self):
         start = time()
         self.get_github_repo_list()
-        self._clone_repositorys()
-        self._search_in_commits()
+        self._clone_repositories()
+        self._search_in_commits(search_list=self.search_list)
         total_time = utils.convert_to_seconds(start, time())
         lgr.debug('Total time: {0} seconds'.format(total_time))
-        utils.print_error_summary(self.error_summary, lgr)
+        utils.print_results_summary(self.results_summary, lgr)
 
 
 def search(search_list, organization, git_user=None, git_password=None,
-           skipped_repo=None, local_path=DEFAULT_PATH, log_path=LOG_PATH,
-           verbose=False, quiet_git=True):
+           repos_to_skip=None, cloned_repos_path=constants.DEFAULT_PATH,
+           log_path=constants.RESULTS_PATH, verbose=False, quiet_git=True):
 
-    skipped_repo = skipped_repo or []
-    org = Organization(search_list=search_list, skipped_repo=skipped_repo,
-                       organization=organization, git_user=git_user,
-                       git_password=git_password, local_path=local_path,
-                       log_path=log_path, verbose=verbose, quiet_git=quiet_git)
+    repos_to_skip = repos_to_skip or []
+    org = Organization(
+        search_list=search_list,
+        repos_to_skip=repos_to_skip,
+        organization=organization,
+        git_user=git_user,
+        git_password=git_password,
+        cloned_repos_path=cloned_repos_path,
+        log_path=log_path,
+        verbose=verbose,
+        quiet_git=quiet_git)
     org.search()
-
