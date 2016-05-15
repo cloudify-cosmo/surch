@@ -14,11 +14,9 @@
 #    * limitations under the License.
 
 import os
-import shutil
 import logging
 import subprocess
 from time import time
-from datetime import datetime
 
 import retrying
 from tinydb import TinyDB
@@ -34,7 +32,6 @@ class Repo(object):
     def __init__(
             self,
             repo_url,
-            config_file=None,
             cloned_repo_path=constants.DEFAULT_PATH,
             results_file_path=constants.RESULTS_PATH,
             consolidate_log=False,
@@ -43,7 +40,7 @@ class Repo(object):
         """
         self.error_summary = []
         self.results = 0
-        self._handle_results_file(results_file_path, consolidate_log)
+        utils.handle_results_file(results_file_path, consolidate_log)
         self.db = TinyDB(
             results_file_path,
             sort_keys=True,
@@ -57,19 +54,6 @@ class Repo(object):
         self.quiet_git = '--quiet' if not verbose else ''
 
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
-
-    @staticmethod
-    def _handle_results_file(results_file_path, consolidate_log):
-        if os.path.isfile(results_file_path):
-            if not consolidate_log:
-                timestamp = str(datetime.now().strftime('%Y%m%dT%H%M%S'))
-                new_log_file = results_file_path + '.' + timestamp
-                lgr.info(
-                    'Previous results file found. Backing up '
-                    'to {0}'.format(new_log_file))
-                shutil.move(results_file_path, new_log_file)
-            else:
-                shutil.remove(results_file_path)
 
     @classmethod
     def init_with_config_file(cls, config_file, verbose=False):
@@ -213,12 +197,12 @@ def search(
         verbose=False):
 
     if config_file:
-        repo = Repo().init_with_config_file(config_file, verbose)
+        repo = Repo.init_with_config_file(config_file, verbose)
     else:
         repo = Repo(
             repo_url=repo_url,
             cloned_repo_path=cloned_repo_path,
             results_file_path=results_file_path,
-            consolidate_log=False,
+            consolidate_log=consolidate_log,
             verbose=verbose)
     repo.search(search_list)

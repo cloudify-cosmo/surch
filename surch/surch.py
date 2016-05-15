@@ -14,8 +14,9 @@
 #    * limitations under the License.
 
 import click
+import shutil
 
-from . import logger, repo, organization, constants
+from . import logger, repo, organization, constants, pagerduty
 
 lgr = logger.init()
 
@@ -32,14 +33,19 @@ def main():
               help='A path to a Surch config file')
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
-              'This can be passed multiple times.')
+                   'This can be passed multiple times.')
 @click.option('-p', '--cloned-repo-path', default=constants.DEFAULT_PATH,
               help='Directory to clone repository to.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this file. '
-              '[defaults to {0}]'.format(constants.RESULTS_PATH))
+                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clones repos')
+@click.option('--pager', default=False,
+              help='This arg need to be api_key::service_key')
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, cloned_repo_path, log, verbose):
+def surch_repo(repo_url, config_file, string, pager,
+               remove, cloned_repo_path, log, verbose):
     """Search a single repository"""
     logger.configure()
     repo.search(
@@ -49,6 +55,11 @@ def surch_repo(repo_url, config_file, string, cloned_repo_path, log, verbose):
         cloned_repo_path=cloned_repo_path,
         results_file_path=log,
         verbose=verbose)
+    if pager:
+        pagerduty.trigger(log_path=log, keys=pager)
+
+    if remove:
+        shutil.rmtree(cloned_repo_path)
 
 
 @main.command(name='org')
@@ -58,10 +69,10 @@ def surch_repo(repo_url, config_file, string, cloned_repo_path, log, verbose):
               help='A path to a Surch config file')
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
-              'This can be passed multiple times.')
+                   'This can be passed multiple times.')
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
-              'This can be passed multiple times.')
+                   'This can be passed multiple times.')
 @click.option('-U', '--user', default=None,
               help='Git user name for authenticate.')
 @click.option('-P', '--password', default=None, required=False,
@@ -70,10 +81,14 @@ def surch_repo(repo_url, config_file, string, cloned_repo_path, log, verbose):
               help='Directory to contain all cloned repositories.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this file. '
-              '[defaults to {0}]'.format(constants.RESULTS_PATH))
+                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clones repos')
+@click.option('--pager', default=False,
+              help='This arg need to be api_key::service_key')
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, skip, user,
-              password, cloned_repos_path, log, verbose):
+              pager, remove, password, cloned_repos_path, log, verbose):
     """Surch all repositories in an organization"""
     logger.configure()
     organization.search(
@@ -86,3 +101,8 @@ def surch_org(organization_name, config_file, string, skip, user,
         cloned_repos_path=cloned_repos_path,
         results_file_path=log,
         verbose=verbose)
+    if pager:
+        pagerduty.trigger(log_path=log, keys=pager)
+
+    if remove:
+        shutil.rmtree(cloned_repos_path)
