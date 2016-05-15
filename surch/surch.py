@@ -16,7 +16,7 @@
 import click
 import shutil
 
-from . import logger, repo, organization, constants, pagerduty
+from . import logger, repo, organization, constants
 
 lgr = logger.init()
 
@@ -41,8 +41,6 @@ def main():
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
-@click.option('--pager', default=False,
-              help='This arg need to be api_key::service_key')
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_repo(repo_url, config_file, string, pager,
                remove, cloned_repo_path, log, verbose):
@@ -55,8 +53,6 @@ def surch_repo(repo_url, config_file, string, pager,
         cloned_repo_path=cloned_repo_path,
         results_file_path=log,
         verbose=verbose)
-    if pager:
-        pagerduty.trigger(log_path=log, keys=pager)
 
     if remove:
         shutil.rmtree(cloned_repo_path)
@@ -84,8 +80,6 @@ def surch_repo(repo_url, config_file, string, pager,
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
-@click.option('--pager', default=False,
-              help='This arg need to be api_key::service_key')
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, skip, user,
               pager, remove, password, cloned_repos_path, log, verbose):
@@ -101,8 +95,6 @@ def surch_org(organization_name, config_file, string, skip, user,
         cloned_repos_path=cloned_repos_path,
         results_file_path=log,
         verbose=verbose)
-    if pager:
-        pagerduty.trigger(log_path=log, keys=pager)
 
     if remove:
         shutil.rmtree(cloned_repos_path)
