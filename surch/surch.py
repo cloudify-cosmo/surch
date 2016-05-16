@@ -82,13 +82,56 @@ def surch_repo(repo_url, config_file, string, pager,
               help='Remove clones repos')
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, skip, user,
-              pager, remove, password, cloned_repos_path, log, verbose):
+              remove, password, cloned_repos_path, log, verbose):
     """Surch all repositories in an organization"""
     logger.configure()
     organization.search(
         config_file=config_file,
         search_list=list(string),
         repos_to_skip=skip,
+        organization=organization_name,
+        git_user=user,
+        git_password=password,
+        cloned_repos_path=cloned_repos_path,
+        results_file_path=log,
+        verbose=verbose)
+
+    if remove:
+        shutil.rmtree(cloned_repos_path)
+
+
+@main.command(name='user')
+@click.argument('organization_name', required=False)
+@click.option('-c', '--config-file', default=None,
+              type=click.Path(exists=False, file_okay=True),
+              help='A path to a Surch config file')
+@click.option('-s', '--string', multiple=True,
+              help='String you would like to search for. '
+                   'This can be passed multiple times.')
+@click.option('--skip', default='', multiple=True,
+              help='Repo you would like to skip. '
+                   'This can be passed multiple times.')
+@click.option('-U', '--user', default=None,
+              help='Git user name for authenticate.')
+@click.option('-P', '--password', default=None, required=False,
+              help='Git user password for authenticate')
+@click.option('-p', '--cloned-repos-path', default=constants.DEFAULT_PATH,
+              help='Directory to contain all cloned repositories.')
+@click.option('-l', '--log', default=constants.RESULTS_PATH,
+              help='All results will be logged to this file. '
+                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clones repos')
+@click.option('-v', '--verbose', default=False, is_flag=True)
+def surch_org(organization_name, config_file, string, skip, user,
+              remove, password, cloned_repos_path, log, verbose):
+    """Surch all repositories in an user"""
+    logger.configure()
+    organization.search(
+        config_file=config_file,
+        search_list=list(string),
+        repos_to_skip=skip,
+        organization_flag=False,
         organization=organization_name,
         git_user=user,
         git_password=password,

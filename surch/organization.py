@@ -21,8 +21,8 @@ import requests
 from . import logger, repo, utils, constants
 
 REPO_DETAILS_API_URL = \
-    'https://api.github.com/orgs/{0}/repos?type={1}&per_page={2}&page={3}'
-ORG_DETAILS_API_URL = 'https://api.github.com/orgs/{0}'
+    'https://api.github.com/{0}/{1}/repos?type={2}&per_page={3}&page={4}'
+ORG_DETAILS_API_URL = 'https://api.github.com/{0}/{1}'
 
 
 lgr = logger.init()
@@ -35,6 +35,7 @@ class Organization(object):
             organization,
             git_user,
             git_password,
+            organization_flag=True,
             repos_to_skip=None,
             consolidate_log=False,
             cloned_repos_path=constants.DEFAULT_PATH,
@@ -59,6 +60,7 @@ class Organization(object):
         self.repository_data = []
         if not os.path.isdir(cloned_repos_path):
             os.makedirs(cloned_repos_path)
+        self.item_type = 'orgs' if organization_flag else 'users'
         self.cloned_repos_path = os.path.join(cloned_repos_path, organization)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
@@ -80,7 +82,8 @@ class Organization(object):
         lgr.info('Retrieving list of repositories for the organization...')
         auth = (self.git_user, self.git_password) if self.auth else False
         repository_data = \
-            requests.get(ORG_DETAILS_API_URL.format(self.organization),
+            requests.get(ORG_DETAILS_API_URL.format(self.item_type,
+                                                    self.organization),
                          auth=auth)
 
         repository_number = \
@@ -93,7 +96,8 @@ class Organization(object):
 
             for page_num in range(1, last_page_number):
                 repository_data = requests.get(
-                    REPO_DETAILS_API_URL.format(self.organization,
+                    REPO_DETAILS_API_URL.format(self.item_type,
+                                                self.organization,
                                                 repository_type,
                                                 repository_per_page,
                                                 page_num), auth=auth)
@@ -128,6 +132,7 @@ def search(
         git_user=None,
         git_password=None,
         repos_to_skip=None,
+        organization_flag=True,
         config_file=None,
         cloned_repos_path=constants.DEFAULT_PATH,
         results_file_path=constants.RESULTS_PATH,
@@ -139,6 +144,7 @@ def search(
             search_list=search_list,
             organization=organization,
             git_user=git_user,
+            organization_flag=organization_flag,
             git_password=git_password,
             repos_to_skip=repos_to_skip,
             cloned_repos_path=cloned_repos_path,
