@@ -13,15 +13,12 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import os
 import click
-from . import logger, repo, organization
+import shutil
+
+from . import logger, repo, organization, constants
 
 lgr = logger.init()
-
-HOME_PATH = os.path.expanduser("~")
-DEFAULT_PATH = os.path.join(HOME_PATH, 'surch')
-LOG_PATH = os.path.join(HOME_PATH, 'results.json')
 
 
 @click.group()
@@ -29,102 +26,118 @@ def main():
     pass
 
 
-@main.group(name='repo')
-def repository():
-    """ Run surch on repository """
-    pass
-
-
-@repository.command(name='search')
-@click.argument('repo_url', required=False)
-@click.option('-c', '--config', default=None,
+@main.command(name='repo')
+@click.argument('repo_url')
+@click.option('-c', '--config-file', default=None,
               type=click.Path(exists=False, file_okay=True),
-              help='Config var file full path.')
-@click.option('-S', '--strings', multiple=True,
-              help='List of secrets you want to search.')
-@click.option('-p', '--path', default=DEFAULT_PATH,
-              help='This path contain the repos clone.')
-@click.option('-l', '--log', default=LOG_PATH,
-              help='Log file for bad commits')
-@click.option('-q', '--quiet', default=True, flag_value=False)
+              help='A path to a Surch config file')
+@click.option('-s', '--string', multiple=True,
+              help='String you would like to search for. '
+                   'This can be passed multiple times.')
+@click.option('-p', '--cloned-repo-path', default=constants.DEFAULT_PATH,
+              help='Directory to clone repository to.')
+@click.option('-l', '--log', default=constants.RESULTS_PATH,
+              help='All results will be logged to this file. '
+                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clones repos')
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def repository_search(strings, repo_url, log, path, verbose, quiet, config):
-    """check single repository"""
+def surch_repo(repo_url, config_file, string, pager,
+               remove, cloned_repo_path, log, verbose):
+    """Search a single repository"""
     logger.configure()
-    if config:
-        config_file_extension = os.path.splitext(config)[1].lower()
-        if config_file_extension == '.yaml' or config_file_extension == '.yml':
-            repository_local = repo.Repo.get_and_init_vars_from_config_file(
-                config, verbose, quiet)
-            repository_local.search()
-        else:
-            lgr.error('Config file is not .YAML/.YML')
-    else:
-        if path == DEFAULT_PATH:
-            lgr.info('Default directory path is: {0}'.format(DEFAULT_PATH))
-        if log == LOG_PATH:
-            lgr.info('Default log path is: {0}'.format(LOG_PATH))
-        config_file_extension = os.path.splitext(log)[1].lower()
-        if config_file_extension == '.json':
-            repo.search(search_list=strings, repo_url=repo_url,
-                        local_path=path, log_path=log,
-                        verbose=verbose, quiet_git=quiet)
-        else:
-            lgr.error('log file is not .json')
+    repo.search(
+        config_file=config_file,
+        search_list=list(string),
+        repo_url=repo_url,
+        cloned_repo_path=cloned_repo_path,
+        results_file_path=log,
+        verbose=verbose)
+
+    if remove:
+        shutil.rmtree(cloned_repo_path)
 
 
-@main.group()
-def org():
-    """ Run surch on organization """
-    pass
-
-
-@org.command(name='search')
+@main.command(name='org')
 @click.argument('organization_name', required=False)
-@click.option('-c', '--config', default=None,
-              type=click.Path(exists=True, file_okay=True),
-              help='Config var file full path.')
-@click.option('-S', '--search', multiple=True,
-              help='List of secrets you want to search.')
-@click.option('-i', '--ignore', default='', multiple=True,
-              help="List of repo you didn't want to check.")
+@click.option('-c', '--config-file', default=None,
+              type=click.Path(exists=False, file_okay=True),
+              help='A path to a Surch config file')
+@click.option('-s', '--string', multiple=True,
+              help='String you would like to search for. '
+                   'This can be passed multiple times.')
+@click.option('--skip', default='', multiple=True,
+              help='Repo you would like to skip. '
+                   'This can be passed multiple times.')
 @click.option('-U', '--user', default=None,
               help='Git user name for authenticate.')
 @click.option('-P', '--password', default=None, required=False,
               help='Git user password for authenticate')
-@click.option('-p', '--path', default=DEFAULT_PATH,
-              help='This path contain the repos clone.')
-@click.option('-l', '--log', default=LOG_PATH,
-              help='Log file for result need to be json file ')
+@click.option('-p', '--cloned-repos-path', default=constants.DEFAULT_PATH,
+              help='Directory to contain all cloned repositories.')
+@click.option('-l', '--log', default=constants.RESULTS_PATH,
+              help='All results will be logged to this file. '
+                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clones repos')
 @click.option('-v', '--verbose', default=False, is_flag=True)
-@click.option('-q', '--quiet', default=True, flag_value=False)
-def organization_search(search, ignore, organization_name, user,
-                        password, log, path, verbose, quiet, config):
-    ''' Run surch on organization'''
+def surch_org(organization_name, config_file, string, skip, user,
+              remove, password, cloned_repos_path, log, verbose):
+    """Surch all repositories in an organization"""
     logger.configure()
-    if config:
-        config_file_extension = os.path.splitext(config)[1].lower()
-        if config_file_extension == '.yaml' or config_file_extension == '.yml':
-            repository_local = \
-                organization.Organization.get_and_init_vars_from_config_file(
-                    config, verbose, quiet)
-            repository_local.search()
-        else:
-            lgr.error('Config file is not .YAML/.YML')
-    else:
-        if path == DEFAULT_PATH:
-            lgr.info('Default directory path is: {0}'.format(DEFAULT_PATH))
-        if log == LOG_PATH:
-            lgr.info('Default log path is: {0}'.format(LOG_PATH))
-        config_file_extension = os.path.splitext(log)[1].lower()
-        if config_file_extension == '.json':
-            organization.search(search_list=search, skipped_repo=ignore,
-                                organization=organization_name, git_user=user,
-                                git_password=password, local_path=path,
-                                log_path=log, verbose=verbose, quiet_git=quiet)
-        else:
-            lgr.error('log file is not .json')
+    organization.search(
+        config_file=config_file,
+        search_list=list(string),
+        repos_to_skip=skip,
+        organization=organization_name,
+        git_user=user,
+        git_password=password,
+        cloned_repos_path=cloned_repos_path,
+        results_file_path=log,
+        verbose=verbose)
+
+    if remove:
+        shutil.rmtree(cloned_repos_path)
 
 
-repository.add_command(repository_search)
-org.add_command(organization_search)
+@main.command(name='user')
+@click.argument('organization_name', required=False)
+@click.option('-c', '--config-file', default=None,
+              type=click.Path(exists=False, file_okay=True),
+              help='A path to a Surch config file')
+@click.option('-s', '--string', multiple=True,
+              help='String you would like to search for. '
+                   'This can be passed multiple times.')
+@click.option('--skip', default='', multiple=True,
+              help='Repo you would like to skip. '
+                   'This can be passed multiple times.')
+@click.option('-U', '--user', default=None,
+              help='Git user name for authenticate.')
+@click.option('-P', '--password', default=None, required=False,
+              help='Git user password for authenticate')
+@click.option('-p', '--cloned-repos-path', default=constants.DEFAULT_PATH,
+              help='Directory to contain all cloned repositories.')
+@click.option('-l', '--log', default=constants.RESULTS_PATH,
+              help='All results will be logged to this file. '
+                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clones repos')
+@click.option('-v', '--verbose', default=False, is_flag=True)
+def surch_org(organization_name, config_file, string, skip, user,
+              remove, password, cloned_repos_path, log, verbose):
+    """Surch all repositories in an user"""
+    logger.configure()
+    organization.search(
+        config_file=config_file,
+        search_list=list(string),
+        repos_to_skip=skip,
+        organization_flag=False,
+        organization=organization_name,
+        git_user=user,
+        git_password=password,
+        cloned_repos_path=cloned_repos_path,
+        results_file_path=log,
+        verbose=verbose)
+
+    if remove:
+        shutil.rmtree(cloned_repos_path)

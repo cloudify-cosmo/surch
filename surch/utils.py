@@ -13,28 +13,31 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+import os
 import yaml
+import shutil
+from datetime import datetime
+
+from . import logger
+
+lgr = logger.init()
 
 
-def get_and_init_vars_from_config_file(config_file, verbose=False,
-                                       quiet_git=True):
-    """ Define vars from "config.yaml" file"""
+def read_config_file(config_file, verbose=False):
+    """Define vars from "config.yaml" file
+    """
     with open(config_file, 'r') as config:
         conf_vars = yaml.load(config.read())
     conf_vars.setdefault('verbose', verbose)
-    conf_vars.setdefault('quiet_git', quiet_git)
     return conf_vars
 
 
-def print_error_summary(error_summary, lgr):
-    if error_summary:
-        lgr.info(
-            'Summary of all errors: \n{0}'.format(
-                '\n'.join(error_summary)))
+def print_results_summary(error_summary, lgr):
+    lgr.info('Summary of all errors: \n{0}'.format(
+        '\n'.join(error_summary)))
 
 
 def convert_to_seconds(start, end):
-    """ Calculate the runnig time"""
     return str(round(end - start, 3))
 
 
@@ -45,3 +48,14 @@ def find_string_between_strings(s, first, last):
         return s[start:end]
     except ValueError:
         return ' '
+
+
+def handle_results_file(results_file_path, consolidate_log):
+    if os.path.isfile(results_file_path):
+        if not consolidate_log:
+            timestamp = str(datetime.now().strftime('%Y%m%dT%H%M%S'))
+            new_log_file = results_file_path + '.' + timestamp
+            lgr.info(
+                'Previous results file found. Backing up '
+                'to {0}'.format(new_log_file))
+            shutil.move(results_file_path, new_log_file)
