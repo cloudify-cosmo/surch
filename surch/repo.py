@@ -36,9 +36,12 @@ class Repo(object):
             cloned_repo_dir=constants.CLONED_REPOS_PATH,
             results_dir=constants.RESULTS_PATH,
             consolidate_log=False,
-            verbose=False):
+            verbose=False,
+            remove_cloned_repository=False,
+            **kwargs):
         """Surch instance define var from CLI or config file
         """
+        self.remove_cloned_repository = remove_cloned_repository
         self.error_summary = []
         self.results = 0
         self.repo_url = repo_url
@@ -48,16 +51,14 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
-
         self.results_file_path = os.path.join(
             results_dir, self.org_name, 'results.json')
-        utils.handle_results_file(self.results_file_path, consolidate_log)
+        utils.handle_results_file(results_dir, consolidate_log)
         self.db = TinyDB(
-            self.results_file_path,
+            results_dir,
             sort_keys=True,
             indent=4,
             separators=(',', ': '))
-
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
@@ -70,6 +71,7 @@ class Repo(object):
         """This method check if the repo exist in the
         path and run clone or pull
         """
+
         def run(command):
             try:
                 proc = subprocess.Popen(
@@ -191,7 +193,8 @@ class Repo(object):
         commits = self._get_all_commits()
         results = self._search(search_list, commits)
         self._write_results(results)
-
+        if self.remove_cloned_repository:
+            utils.remove_repos_folder(path=self.repo_path)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_results_summary(self.error_summary, lgr)
@@ -207,7 +210,9 @@ def search(
         cloned_repo_dir=constants.CLONED_REPOS_PATH,
         results_dir=constants.RESULTS_PATH,
         consolidate_log=False,
-        verbose=False):
+        verbose=False,
+        remove_cloned_repository=False,
+        **kwargs):
 
     if config_file:
         repo = Repo.init_with_config_file(config_file, verbose)
@@ -217,5 +222,6 @@ def search(
             cloned_repo_dir=cloned_repo_dir,
             results_dir=results_dir,
             consolidate_log=consolidate_log,
+            remove_cloned_repository=remove_cloned_repository,
             verbose=verbose)
-    repo.search(search_list)
+    repo.search(search_list=search_list)

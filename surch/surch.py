@@ -13,10 +13,9 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import shutil
-
 import click
 
+from plugins import handler
 from . import logger, repo, organization, constants
 
 lgr = logger.init()
@@ -28,13 +27,15 @@ def main():
 
 
 @main.command(name='repo')
-@click.argument('repo_url')
+@click.argument('repo_url', required=False)
 @click.option('-c', '--config-file', default=None,
               type=click.Path(exists=False, file_okay=True),
               help='A path to a Surch config file')
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
+@click.option('--source', multiple=True, default=[],
+              help='plugins name.')
 @click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
               help='Directory to clone repository to.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
@@ -42,22 +43,32 @@ def main():
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
+@click.option('--show-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string,
+def surch_repo(repo_url, config_file, string, show_result, source,
                remove, cloned_repo_dir, log, verbose):
     """Search a single repository
     """
+
     logger.configure()
+    handler.check_plugins(config_file, source)
+    source = handler.convert_to_lowercase_list(source) if source else ('', '')
+
     repo.search(
         config_file=config_file,
         search_list=list(string),
         repo_url=repo_url,
         cloned_repo_dir=cloned_repo_dir,
         results_dir=log,
+        remove_cloned_repository=remove,
         verbose=verbose)
 
-    if remove:
-        shutil.rmtree(cloned_repo_dir)
+    if 'pagerduty' in source:
+        handler.pagerduty_trigger(config_file=config_file,
+                                  log=log,
+                                  verbose=verbose)
+    if show_result:
+        handler.show_result(log=log)
 
 
 @main.command(name='org')
@@ -68,6 +79,8 @@ def surch_repo(repo_url, config_file, string,
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
+@click.option('--source', multiple=True,
+              help='plugins name.')
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
@@ -78,16 +91,20 @@ def surch_repo(repo_url, config_file, string,
 @click.option('-p', '--cloned-repos-path', default=constants.CLONED_REPOS_PATH,
               help='Directory to contain all cloned repositories.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this file. '
+              help='All results will be logged to this directory. '
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
+@click.option('--show-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_org(organization_name, config_file, string, skip, user,
-              remove, password, cloned_repos_path, log, verbose):
+def surch_org(organization_name, config_file, string, skip, user, show_result,
+              source, remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
+    handler.check_plugins(config_file, source)
+    source = handler.convert_to_lowercase_list(source) if source else ('', '')
     logger.configure()
+
     organization.search(
         config_file=config_file,
         search_list=list(string),
@@ -96,11 +113,16 @@ def surch_org(organization_name, config_file, string, skip, user,
         git_user=user,
         git_password=password,
         cloned_repos_path=cloned_repos_path,
+        remove_cloned_repository=remove,
         results_dir=log,
         verbose=verbose)
 
-    if remove:
-        shutil.rmtree(cloned_repos_path)
+    if 'pagerduty' in source:
+        handler.pagerduty_trigger(config_file=config_file,
+                                  log=log,
+                                  verbose=verbose)
+    if show_result:
+        handler.show_result(log=log)
 
 
 @main.command(name='user')
@@ -111,6 +133,8 @@ def surch_org(organization_name, config_file, string, skip, user,
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
+@click.option('--source', multiple=True,
+              help='plugins name.')
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
@@ -121,16 +145,20 @@ def surch_org(organization_name, config_file, string, skip, user,
 @click.option('-p', '--cloned-repos-path', default=constants.CLONED_REPOS_PATH,
               help='Directory to contain all cloned repositories.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this file. '
+              help='All results will be logged to this directory. '
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
+@click.option('--show-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_user(organization_name, config_file, string, skip, user,
-               remove, password, cloned_repos_path, log, verbose):
+def surch_user(organization_name, config_file, string, skip, user, source,
+               remove, password, cloned_repos_path, log, show_result, verbose):
     """Search all or some repositories for a user
     """
+
     logger.configure()
+    handler.check_plugins(config_file, source)
+    source = handler.convert_to_lowercase_list(source) if source else ('', '')
     organization.search(
         config_file=config_file,
         search_list=list(string),
@@ -140,8 +168,13 @@ def surch_user(organization_name, config_file, string, skip, user,
         git_user=user,
         git_password=password,
         cloned_repos_path=cloned_repos_path,
+        remove_cloned_repository=remove,
         results_dir=log,
         verbose=verbose)
 
-    if remove:
-        shutil.rmtree(cloned_repos_path)
+    if 'pagerduty' in source:
+        handler.pagerduty_trigger(config_file=config_file,
+                                  log=log,
+                                  verbose=verbose)
+    if show_result:
+        handler.show_result(log=log)

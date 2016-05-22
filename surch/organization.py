@@ -40,7 +40,9 @@ class Organization(object):
             consolidate_log=False,
             cloned_repos_path=constants.CLONED_REPOS_PATH,
             results_dir=constants.RESULTS_PATH,
-            verbose=False):
+            verbose=False,
+            remove_cloned_repository=False,
+            **kwargs):
         """Surch instance define var from CLI or config file
         """
         utils.handle_results_file(results_dir, consolidate_log)
@@ -56,19 +58,24 @@ class Organization(object):
             self.auth = True
             self.git_user = git_user
             self.git_password = git_password
+        self.remove_cloned_repository = remove_cloned_repository
         self.repository_data = []
         if not os.path.isdir(cloned_repos_path):
             os.makedirs(cloned_repos_path)
         self.item_type = 'orgs' if organization_flag else 'users'
+        self.object_type = 'organization' if organization_flag else 'user'
         self.cloned_repos_path = cloned_repos_path
-        self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
 
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
-    def init_with_config_file(cls, config_file, verbose=False):
-        conf_vars = utils.read_config_file(config_file, verbose)
+    def init_with_config_file(cls, config_file, verbose=False,
+                              remove_cloned_repository=False,
+                              organization_flag=True):
+        conf_vars = utils.read_config_file(config_file, verbose,
+                                           remove_cloned_repository,
+                                           organization_flag)
         return cls(**conf_vars)
 
     def get_github_repo_list(
@@ -78,13 +85,14 @@ class Organization(object):
             repository_per_page=100):
         """This method get from GitHub the git url list for cloning
         """
-        lgr.info('Retrieving list of repositories for the organization...')
+        lgr.info(
+            'Retrieving list of repositories for the {0}...'.format(
+                self.object_type))
         auth = (self.git_user, self.git_password) if self.auth else False
         repository_data = \
-            requests.get(ORG_DETAILS_API_URL.format(self.item_type,
-                                                    self.organization),
-                         auth=auth)
-
+            requests.get(
+                ORG_DETAILS_API_URL.format(
+                    self.item_type, self.organization), auth=auth)
         if '<Response [404]>' in str(repository_data):
             lgr.error(
                 'The organization or user {0} could not be found. '
@@ -120,7 +128,6 @@ class Organization(object):
         if len(search_list) == 0:
             lgr.error('You must supply at least one string to search for.')
             sys.exit(1)
-
         self.get_github_repo_list()
         self.cloned_repos_path = os.path.join(self.organization,
                                               self.cloned_repos_path)
@@ -131,8 +138,11 @@ class Organization(object):
                     repo_url=repository_data[url_type],
                     cloned_repo_dir=self.cloned_repos_path,
                     results_dir=self.results_dir,
+                    remove_cloned_repository=False,
                     consolidate_log=True,
                     verbose=self.verbose)
+        if self.remove_cloned_repository:
+            utils.remove_repos_folder(path=self.cloned_repos_path)
 
 
 def search(
@@ -145,9 +155,16 @@ def search(
         config_file=None,
         cloned_repos_path=constants.CLONED_REPOS_PATH,
         results_dir=constants.RESULTS_PATH,
-        verbose=False):
+        remove_cloned_repository=False,
+        verbose=False,
+        **kwargs):
+
     if config_file:
-        org = Organization.init_with_config_file(config_file, verbose)
+        org = Organization.init_with_config_file(
+            config_file=config_file,
+            verbose=verbose,
+            remove_cloned_repository=remove_cloned_repository,
+            organization_flag=organization_flag)
     else:
         org = Organization(
             organization=organization,
@@ -157,6 +174,7 @@ def search(
             repos_to_skip=repos_to_skip,
             cloned_repos_path=cloned_repos_path,
             results_dir=results_dir,
+            remove_cloned_repository=remove_cloned_repository,
             verbose=verbose)
 
     org.search(search_list=search_list)
