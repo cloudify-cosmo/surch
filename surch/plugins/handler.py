@@ -53,4 +53,6 @@ def source_handle(config_file=None, source=None):
                 lgr.error("Used a config file when you want to use '--source'.")
                 sys.exit(1)
         return lowercase_list
+    else:
+        return ('', '')
 
