@@ -14,6 +14,7 @@
 #    * limitations under the License.
 
 import os
+import sys
 import logging
 
 import requests
@@ -31,22 +32,20 @@ lgr = logger.init()
 class Organization(object):
     def __init__(
             self,
-            search_list,
             organization,
             git_user,
             git_password,
             organization_flag=True,
             repos_to_skip=None,
             consolidate_log=False,
-            cloned_repos_path=constants.DEFAULT_PATH,
-            results_file_path=constants.RESULTS_PATH,
+            cloned_repos_path=constants.CLONED_REPOS_PATH,
+            results_dir=constants.RESULTS_PATH,
             verbose=False):
         """Surch instance define var from CLI or config file
         """
-        utils.handle_results_file(results_file_path, consolidate_log)
+        utils.handle_results_file(results_dir, consolidate_log)
         self.organization = organization
-        self.results_file_path = results_file_path
-        self.search_list = search_list
+        self.results_dir = results_dir
         self.repos_to_skip = repos_to_skip or []
         if not git_user or not git_user:
             lgr.warn(
@@ -61,7 +60,7 @@ class Organization(object):
         if not os.path.isdir(cloned_repos_path):
             os.makedirs(cloned_repos_path)
         self.item_type = 'orgs' if organization_flag else 'users'
-        self.cloned_repos_path = os.path.join(cloned_repos_path, organization)
+        self.cloned_repos_path = cloned_repos_path
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
 
@@ -86,6 +85,12 @@ class Organization(object):
                                                     self.organization),
                          auth=auth)
 
+        if '<Response [404]>' in str(repository_data):
+            lgr.error(
+                'The organization or user {0} could not be found. '
+                'Please make sure you use the correct type (org/user).'.format(
+                    self.organization))
+            sys.exit(1)
         repository_number = \
             repository_data.json()['{0}_repos'.format(repository_type)]
         last_page_number = repository_number / repository_per_page
@@ -111,17 +116,21 @@ class Organization(object):
         return [dict((key, data[key]) for key in list_of_arguments)
                 for data in self.repository_data]
 
-    def search(self, url_type='clone_url'):
+    def search(self, search_list, url_type='clone_url'):
+        if len(search_list) == 0:
+            lgr.error('You must supply at least one string to search for.')
+            sys.exit(1)
+
         self.get_github_repo_list()
         self.cloned_repos_path = os.path.join(self.organization,
                                               self.cloned_repos_path)
         for repository_data in self.repository_specific_data:
             if repository_data['name'] not in self.repos_to_skip:
                 repo.search(
-                    search_list=self.search_list,
+                    search_list=search_list,
                     repo_url=repository_data[url_type],
-                    cloned_repo_path=self.cloned_repos_path,
-                    results_file_path=self.results_file_path,
+                    cloned_repo_dir=self.cloned_repos_path,
+                    results_dir=self.results_dir,
                     consolidate_log=True,
                     verbose=self.verbose)
 
@@ -134,21 +143,20 @@ def search(
         repos_to_skip=None,
         organization_flag=True,
         config_file=None,
-        cloned_repos_path=constants.DEFAULT_PATH,
-        results_file_path=constants.RESULTS_PATH,
+        cloned_repos_path=constants.CLONED_REPOS_PATH,
+        results_dir=constants.RESULTS_PATH,
         verbose=False):
     if config_file:
         org = Organization.init_with_config_file(config_file, verbose)
     else:
         org = Organization(
-            search_list=search_list,
             organization=organization,
             git_user=git_user,
             organization_flag=organization_flag,
             git_password=git_password,
             repos_to_skip=repos_to_skip,
             cloned_repos_path=cloned_repos_path,
-            results_file_path=results_file_path,
+            results_dir=results_dir,
             verbose=verbose)
 
-    org.search()
+    org.search(search_list=search_list)

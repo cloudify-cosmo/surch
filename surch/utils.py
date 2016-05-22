@@ -51,6 +51,9 @@ def find_string_between_strings(s, first, last):
 
 
 def handle_results_file(results_file_path, consolidate_log):
+    dirname = os.path.dirname(results_file_path)
+    if not os.path.isdir(os.path.dirname(results_file_path)):
+        os.makedirs(dirname)
     if os.path.isfile(results_file_path):
         if not consolidate_log:
             timestamp = str(datetime.now().strftime('%Y%m%dT%H%M%S'))

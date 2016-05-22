@@ -14,6 +14,7 @@
 #    * limitations under the License.
 
 import os
+import sys
 import logging
 import subprocess
 from time import time
@@ -32,26 +33,30 @@ class Repo(object):
     def __init__(
             self,
             repo_url,
-            cloned_repo_path=constants.DEFAULT_PATH,
-            results_file_path=constants.RESULTS_PATH,
+            cloned_repo_dir=constants.CLONED_REPOS_PATH,
+            results_dir=constants.RESULTS_PATH,
             consolidate_log=False,
             verbose=False):
         """Surch instance define var from CLI or config file
         """
         self.error_summary = []
         self.results = 0
-        utils.handle_results_file(results_file_path, consolidate_log)
-        self.db = TinyDB(
-            results_file_path,
-            sort_keys=True,
-            indent=4,
-            separators=(',', ': '))
         self.repo_url = repo_url
         self.repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
         self.org_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
-        self.repo_path = os.path.join(cloned_repo_path, self.repo_name)
-        self.cloned_repo_path = cloned_repo_path
+        self.cloned_repo_dir = os.path.join(cloned_repo_dir, self.org_name)
+        self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
+        self.verbose = verbose
+
+        self.results_file_path = os.path.join(
+            results_dir, self.org_name, 'results.json')
+        utils.handle_results_file(self.results_file_path, consolidate_log)
+        self.db = TinyDB(
+            self.results_file_path,
+            sort_keys=True,
+            indent=4,
+            separators=(',', ': '))
 
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
@@ -70,22 +75,24 @@ class Repo(object):
                 proc = subprocess.Popen(
                     command, stdout=subprocess.PIPE, shell=True)
                 proc.stdout, proc.stderr = proc.communicate()
-                print(proc.stdout)
+                if self.verbose:
+                    lgr.debug(proc.stdout)
             except subprocess.CalledProcessError as git_error:
                 err = 'Failed execute {0} on repo {1} ({1})'.format(
                     command, self.repo_name, git_error)
                 lgr.error(err)
                 self.error_summary.append(err)
 
-        if not os.path.isdir(self.cloned_repo_path):
-            os.makedirs(self.cloned_repo_path)
+        if not os.path.isdir(self.cloned_repo_dir):
+            os.makedirs(self.cloned_repo_dir)
         if os.path.isdir(self.repo_path):
-            lgr.debug('Local repository already exists at: {0}'.format(
+            lgr.debug('Local repo already exists at: {0}'.format(
                 self.repo_path))
-            lgr.info('Pulling repository: {0}...'.format(self.repo_name))
+            lgr.info('Pulling repo: {0}...'.format(self.repo_name))
             run('git -C {0} pull {1}'.format(self.repo_path, self.quiet_git))
         else:
-            lgr.info('Cloning repository: {0}...'.format(self.repo_name))
+            lgr.info('Cloning repo {0} from org {1} to {2}...'.format(
+                self.repo_name, self.org_name, self.repo_path))
             run('git clone {0} {1} {2}'.format(
                 self.quiet_git, self.repo_url, self.repo_path))
 
@@ -93,6 +100,7 @@ class Repo(object):
     def _create_search_string(search_list):
         """Create part of the grep command from search list.
         """
+
         lgr.debug('Generating git grep-able search string...')
         unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
         search_string = ' --or -e '.join(unglobbed_search_list)
@@ -132,6 +140,7 @@ class Repo(object):
             return []
 
     def _write_results(self, results):
+        lgr.info('Writing results to: {0}...'.format(self.results_file_path))
         for matched_files in results:
             for match in matched_files:
                 try:
@@ -173,6 +182,10 @@ class Repo(object):
         return name, email, commit_time
 
     def search(self, search_list):
+        if len(search_list) == 0:
+            lgr.error('You must supply at least one string to search for.')
+            sys.exit(1)
+
         start = time()
         self._clone_or_pull()
         commits = self._get_all_commits()
@@ -191,8 +204,8 @@ def search(
         search_list,
         repo_url,
         config_file=None,
-        cloned_repo_path=constants.DEFAULT_PATH,
-        results_file_path=constants.RESULTS_PATH,
+        cloned_repo_dir=constants.CLONED_REPOS_PATH,
+        results_dir=constants.RESULTS_PATH,
         consolidate_log=False,
         verbose=False):
 
@@ -201,8 +214,8 @@ def search(
     else:
         repo = Repo(
             repo_url=repo_url,
-            cloned_repo_path=cloned_repo_path,
-            results_file_path=results_file_path,
+            cloned_repo_dir=cloned_repo_dir,
+            results_dir=results_dir,
             consolidate_log=consolidate_log,
             verbose=verbose)
     repo.search(search_list)
