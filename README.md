@@ -11,12 +11,12 @@ Surch iterates through a single GitHub repository or a whole GitHub organization
 
 The output is a file containing the blob url and additional information in which one of the strings was found.
 
-The initial idea behind Surch was to look for secrets but it can be used to search just about anything.
+The initial idea behind Surch was to look for secrets but it can be used to search for just about anything.
 
 While [Gitrob](https://github.com/michenriksen/gitrob) provides mostly the same functionality (plus a whole plethora of additional features), we wanted something that would be lightweight and won't require a PostgreSQL server and other dependencies behind it. To that end, Surch requires no dependencies whatsoever aside from Python.
 
 It's important to note that currently, Surch does not tell you what it found where. It simply tells you that it found one of the strings you searched for and in which commit it was found.
-
+ 
 
 
 ## Installation
@@ -33,6 +33,17 @@ pip install http://github.com/cloudify-cosmo/surch/archive/master.tar.gz
 
 ```shell
 $ surch --help
+
+Usage: surch [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  org   Search all or some repositories in an...
+  repo  Search a single repository
+  user  Search all or some repositories for a user
+
 ```
 
 ### Search in a single repository
@@ -77,32 +88,40 @@ $ cat ~/.surch/results/cloudify-cosmo/results.json
 }
 ```
 
-### Search an entire organization
+### Search an entire organization or user repositories
 
+NOTE: to search in an organization, replace `user` with `org`
 
+```shell
+$ surch user havivw --string banana
+...
 
+INFO - Retrieving list of repositories for the organization...
+INFO - Cloning repo cloudify-interactive-tutorial from org Havivw to /home/nir0s/.surch/clones/Havivw/cloudify-interactive-tutorial...
+INFO - Scanning repo `cloudify-interactive-tutorial` for 1 string(s)...
+INFO - Writing results to: /home/nir0s/.surch/results/Havivw/results.json...
+INFO - Found 0 results in 45 commits.
+...
+
+```
 
 ## Additional Info
 
 * Cloned repositories are stored under ~/.surch/clones
 * Result files are stored under ~/.surch/results
 
-
 ## Testing
 
 NOTE: Running the tests require an internet connection
 
 ```shell
-git clone git@github.com:cloudify-cosmo/wagon.git
-cd wagon
+git clone git@github.com:cloudify-cosmo/surch.git
+cd surch
 pip install tox
 tox
 ```
 
 ## Contributions..
 
-..are always welcome. We're looking to:
-
-* Support Python 3.x
-* Provide the most statistically robust way of identification and installation of Linux compiled Wheels.
+..are always welcome.
 

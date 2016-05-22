@@ -14,6 +14,7 @@
 #    * limitations under the License.
 
 import os
+import sys
 import logging
 import subprocess
 from time import time
@@ -99,6 +100,7 @@ class Repo(object):
     def _create_search_string(search_list):
         """Create part of the grep command from search list.
         """
+
         lgr.debug('Generating git grep-able search string...')
         unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
         search_string = ' --or -e '.join(unglobbed_search_list)
@@ -180,6 +182,10 @@ class Repo(object):
         return name, email, commit_time
 
     def search(self, search_list):
+        if len(search_list) == 0:
+            lgr.error('You must supply at least one string to search for.')
+            sys.exit(1)
+
         start = time()
         self._clone_or_pull()
         commits = self._get_all_commits()
@@ -198,7 +204,7 @@ def search(
         search_list,
         repo_url,
         config_file=None,
-        cloned_repo_dir=constants.DEFAULT_PATH,
+        cloned_repo_dir=constants.CLONED_REPOS_PATH,
         results_dir=constants.RESULTS_PATH,
         consolidate_log=False,
         verbose=False):

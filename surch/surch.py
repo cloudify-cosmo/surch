@@ -45,7 +45,8 @@ def main():
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_repo(repo_url, config_file, string,
                remove, cloned_repo_dir, log, verbose):
-    """Search a single repository"""
+    """Search a single repository
+    """
     logger.configure()
     repo.search(
         config_file=config_file,
@@ -74,7 +75,7 @@ def surch_repo(repo_url, config_file, string,
               help='Git user name for authenticate.')
 @click.option('-P', '--password', default=None, required=False,
               help='Git user password for authenticate')
-@click.option('-p', '--cloned-repos-path', default=constants.DEFAULT_PATH,
+@click.option('-p', '--cloned-repos-path', default=constants.CLONED_REPOS_PATH,
               help='Directory to contain all cloned repositories.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this file. '
@@ -84,7 +85,8 @@ def surch_repo(repo_url, config_file, string,
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, skip, user,
               remove, password, cloned_repos_path, log, verbose):
-    """Surch all repositories in an organization"""
+    """Search all or some repositories in an organization
+    """
     logger.configure()
     organization.search(
         config_file=config_file,
@@ -116,7 +118,7 @@ def surch_org(organization_name, config_file, string, skip, user,
               help='Git user name for authenticate.')
 @click.option('-P', '--password', default=None, required=False,
               help='Git user password for authenticate')
-@click.option('-p', '--cloned-repos-path', default=constants.DEFAULT_PATH,
+@click.option('-p', '--cloned-repos-path', default=constants.CLONED_REPOS_PATH,
               help='Directory to contain all cloned repositories.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this file. '
@@ -126,7 +128,8 @@ def surch_org(organization_name, config_file, string, skip, user,
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_user(organization_name, config_file, string, skip, user,
                remove, password, cloned_repos_path, log, verbose):
-    """Surch all repositories in an user"""
+    """Search all or some repositories for a user
+    """
     logger.configure()
     organization.search(
         config_file=config_file,
