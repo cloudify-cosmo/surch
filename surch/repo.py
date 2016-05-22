@@ -33,6 +33,7 @@ class Repo(object):
     def __init__(
             self,
             repo_url,
+            search_list,
             cloned_repo_dir=constants.CLONED_REPOS_PATH,
             results_dir=constants.RESULTS_PATH,
             consolidate_log=False,
@@ -41,6 +42,8 @@ class Repo(object):
             **kwargs):
         """Surch instance define var from CLI or config file
         """
+
+        self.search_list = search_list
         self.remove_cloned_repository = remove_cloned_repository
         self.error_summary = []
         self.results = 0
@@ -184,6 +187,7 @@ class Repo(object):
         return name, email, commit_time
 
     def search(self, search_list):
+        search_list = search_list or self.search_list
         if len(search_list) == 0:
             lgr.error('You must supply at least one string to search for.')
             sys.exit(1)
@@ -219,6 +223,7 @@ def search(
     else:
         repo = Repo(
             repo_url=repo_url,
+            search_list=search_list,
             cloned_repo_dir=cloned_repo_dir,
             results_dir=results_dir,
             consolidate_log=consolidate_log,

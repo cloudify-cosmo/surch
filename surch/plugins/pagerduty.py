@@ -18,7 +18,7 @@ import time
 import requests
 
 from surch import logger
-from . import handler
+
 
 lgr = logger.init()
 
@@ -26,12 +26,25 @@ lgr = logger.init()
 class Pagerduty(object):
     def __init__(self, results_file_path, api_key, service_key, msg=None):
         self.dicts_number =\
-            handler.count_dicts_in_results_file(results_file_path)
+            self.count_dicts_in_results_file(results_file_path)
         self.today_date = time.strftime('%Y-%m-%d')
         self.msg = msg or 'Surch alert run check on {0} and found {1} commits.'\
             .format(self.today_date, self.dicts_number)
         self.api_key = api_key
         self.service_key = service_key
+
+    @staticmethod
+    def count_dicts_in_results_file(file_path):
+        i = 0
+        try:
+            with open(file_path, 'r') as results_file:
+                results = json.load(results_file)
+            for key, value in results.items():
+                for k, v in value.items():
+                    i += 1
+        except:
+            pass
+        return i
 
     def trigger_incident(self):
         headers = {'Authorization': 'Token token={0}'.format(self.api_key),

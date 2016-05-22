@@ -32,6 +32,7 @@ lgr = logger.init()
 class Organization(object):
     def __init__(
             self,
+            search_list,
             organization,
             git_user,
             git_password,
@@ -46,6 +47,7 @@ class Organization(object):
         """Surch instance define var from CLI or config file
         """
         utils.handle_results_file(results_dir, consolidate_log)
+        self.search_list = search_list
         self.organization = organization
         self.results_dir = results_dir
         self.repos_to_skip = repos_to_skip or []
@@ -125,6 +127,7 @@ class Organization(object):
                 for data in self.repository_data]
 
     def search(self, search_list, url_type='clone_url'):
+        search_list = search_list or self.search_list
         if len(search_list) == 0:
             lgr.error('You must supply at least one string to search for.')
             sys.exit(1)

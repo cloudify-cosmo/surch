@@ -4,6 +4,7 @@ import sys
 from surch import utils, logger
 from . import pagerduty
 
+
 lgr = logger.init()
 
 
@@ -34,36 +35,22 @@ def pagerduty_trigger(config_file=None, log=None, verbose=False):
         sys.exit(1)
 
 
-def count_dicts_in_results_file(file_path):
-    i = 0
-    try:
-        with open(file_path, 'r') as results_file:
-            results = json.load(results_file)
-        for key, value in results.items():
-            for k, v in value.items():
-                i += 1
-    except:
-        pass
-    return i
-
-
-def check_plugins(config_file=None, source=None):
-    if source and config_file:
-        pass
-    else:
-        lgr.error("Used a config file when you want to use '--source'.")
-        sys.exit(1)
-
-
 def show_result(log=None):
         with open(log, 'r') as results_file:
             results = results_file.read()
         lgr.info(results)
 
 
-def convert_to_lowercase_list(list):
-    lowercase_list = []
-    for value in list:
-        value = value.encode('ascii')
-        lowercase_list.append(value.lower())
-    return lowercase_list
+def source_handle(config_file=None, source=None):
+    if source:
+        lowercase_list = []
+        for value in source:
+            value = value.encode('ascii')
+            lowercase_list.append(value.lower())
+            if config_file:
+                pass
+            else:
+                lgr.error("Used a config file when you want to use '--source'.")
+                sys.exit(1)
+        return lowercase_list
+

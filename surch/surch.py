@@ -51,8 +51,7 @@ def surch_repo(repo_url, config_file, string, show_result, source,
     """
 
     logger.configure()
-    handler.check_plugins(config_file, source)
-    source = handler.convert_to_lowercase_list(source) if source else ('', '')
+    source = handler.source_handle(config_file, source)
 
     repo.search(
         config_file=config_file,
@@ -101,9 +100,9 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
               source, remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
-    handler.check_plugins(config_file, source)
-    source = handler.convert_to_lowercase_list(source) if source else ('', '')
+
     logger.configure()
+    source = handler.source_handle(config_file, source)
 
     organization.search(
         config_file=config_file,
@@ -130,11 +129,11 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
 @click.option('-c', '--config-file', default=None,
               type=click.Path(exists=False, file_okay=True),
               help='A path to a Surch config file')
-@click.option('-s', '--string', multiple=True,
+@click.option('-s', '--string', multiple=True, required=False,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
 @click.option('--source', multiple=True,
-              help='plugins name.')
+              help='Plugins name.')
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
@@ -157,11 +156,11 @@ def surch_user(organization_name, config_file, string, skip, user, source,
     """
 
     logger.configure()
-    handler.check_plugins(config_file, source)
-    source = handler.convert_to_lowercase_list(source) if source else ('', '')
+    source = handler.source_handle(config_file, source)
+
     organization.search(
         config_file=config_file,
-        search_list=list(string),
+        search_list=string,
         repos_to_skip=skip,
         organization_flag=False,
         organization=organization_name,
