@@ -36,17 +36,18 @@ class Organization(object):
             organization,
             git_user,
             git_password,
+            print_result=False,
             organization_flag=True,
             repos_to_skip=None,
             consolidate_log=False,
             cloned_repos_path=constants.CLONED_REPOS_PATH,
             results_dir=constants.RESULTS_PATH,
             verbose=False,
-            remove_cloned_repository=False,
+            remove_cloned_dir=False,
             **kwargs):
         """Surch instance define var from CLI or config file
         """
-        utils.handle_results_file(results_dir, consolidate_log)
+        self.print_result = print_result
         self.search_list = search_list
         self.organization = organization
         self.results_dir = results_dir
@@ -60,10 +61,13 @@ class Organization(object):
             self.auth = True
             self.git_user = git_user
             self.git_password = git_password
-        self.remove_cloned_repository = remove_cloned_repository
+        self.remove_cloned_dir = remove_cloned_dir
         self.repository_data = []
         if not os.path.isdir(cloned_repos_path):
             os.makedirs(cloned_repos_path)
+        self.results_file_path = os.path.join(
+            results_dir, self.organization, 'results.json')
+        utils.handle_results_file(self.results_file_path, consolidate_log)
         self.item_type = 'orgs' if organization_flag else 'users'
         self.object_type = 'organization' if organization_flag else 'user'
         self.cloned_repos_path = cloned_repos_path
@@ -73,11 +77,15 @@ class Organization(object):
 
     @classmethod
     def init_with_config_file(cls, config_file, verbose=False,
-                              remove_cloned_repository=False,
+                              print_result=False,
+                              remove_cloned_dir=False,
                               organization_flag=True):
-        conf_vars = utils.read_config_file(config_file, verbose,
-                                           remove_cloned_repository,
-                                           organization_flag)
+        conf_vars = utils.read_config_file(
+            config_file=config_file,
+            print_result=print_result,
+            verbose=verbose,
+            remove_cloned_dir=remove_cloned_dir,
+            organization_flag=organization_flag)
         return cls(**conf_vars)
 
     def get_github_repo_list(
@@ -141,11 +149,14 @@ class Organization(object):
                     repo_url=repository_data[url_type],
                     cloned_repo_dir=self.cloned_repos_path,
                     results_dir=self.results_dir,
-                    remove_cloned_repository=False,
+                    print_result=False,
+                    remove_cloned_repo=False,
                     consolidate_log=True,
                     verbose=self.verbose)
-        if self.remove_cloned_repository:
+        if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_path)
+        if self.print_result:
+            utils.print_result(self.results_file_path)
 
 
 def search(
@@ -158,18 +169,21 @@ def search(
         config_file=None,
         cloned_repos_path=constants.CLONED_REPOS_PATH,
         results_dir=constants.RESULTS_PATH,
-        remove_cloned_repository=False,
+        print_result=False,
+        remove_cloned_dir=False,
         verbose=False,
         **kwargs):
 
     if config_file:
         org = Organization.init_with_config_file(
             config_file=config_file,
+            print_result=print_result,
             verbose=verbose,
-            remove_cloned_repository=remove_cloned_repository,
+            remove_cloned_dir=remove_cloned_dir,
             organization_flag=organization_flag)
     else:
         org = Organization(
+            print_result=print_result,
             search_list=search_list,
             organization=organization,
             git_user=git_user,
@@ -178,7 +192,7 @@ def search(
             repos_to_skip=repos_to_skip,
             cloned_repos_path=cloned_repos_path,
             results_dir=results_dir,
-            remove_cloned_repository=remove_cloned_repository,
+            remove_cloned_dir=remove_cloned_dir,
             verbose=verbose)
 
     org.search(search_list=search_list)

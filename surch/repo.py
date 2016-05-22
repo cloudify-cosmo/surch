@@ -38,13 +38,15 @@ class Repo(object):
             results_dir=constants.RESULTS_PATH,
             consolidate_log=False,
             verbose=False,
-            remove_cloned_repository=False,
+            print_result=False,
+            remove_cloned_dir=False,
             **kwargs):
         """Surch instance define var from CLI or config file
         """
 
+        self.print_result = print_result
         self.search_list = search_list
-        self.remove_cloned_repository = remove_cloned_repository
+        self.remove_cloned_dir = remove_cloned_dir
         self.error_summary = []
         self.results = 0
         self.repo_url = repo_url
@@ -56,17 +58,21 @@ class Repo(object):
         self.verbose = verbose
         self.results_file_path = os.path.join(
             results_dir, self.org_name, 'results.json')
-        utils.handle_results_file(results_dir, consolidate_log)
+        utils.handle_results_file(self.results_file_path, consolidate_log)
         self.db = TinyDB(
-            results_dir,
+            self.results_file_path,
             sort_keys=True,
             indent=4,
             separators=(',', ': '))
+
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
-    def init_with_config_file(cls, config_file, verbose=False):
-        conf_vars = utils.read_config_file(config_file, verbose)
+    def init_with_config_file(cls, config_file, print_result=False,
+                              verbose=False):
+        conf_vars = utils.read_config_file(print_result=print_result,
+                                           config_file=config_file,
+                                           verbose=verbose)
         return cls(**conf_vars)
 
     @retrying.retry(stop_max_attempt_number=3)
@@ -197,7 +203,7 @@ class Repo(object):
         commits = self._get_all_commits()
         results = self._search(search_list, commits)
         self._write_results(results)
-        if self.remove_cloned_repository:
+        if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.repo_path)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
@@ -205,6 +211,8 @@ class Repo(object):
         lgr.info('Found {0} results in {1} commits.'.format(
             self.results, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
+        if self.print_result:
+            utils.print_result(self.results_file_path)
 
 
 def search(
@@ -214,19 +222,23 @@ def search(
         cloned_repo_dir=constants.CLONED_REPOS_PATH,
         results_dir=constants.RESULTS_PATH,
         consolidate_log=False,
+        print_result=False,
         verbose=False,
-        remove_cloned_repository=False,
+        remove_cloned_dir=False,
         **kwargs):
 
     if config_file:
-        repo = Repo.init_with_config_file(config_file, verbose)
+        repo = Repo.init_with_config_file(config_file=config_file,
+                                          print_result=print_result,
+                                          verbose=verbose)
     else:
         repo = Repo(
+            print_result=print_result,
             repo_url=repo_url,
             search_list=search_list,
             cloned_repo_dir=cloned_repo_dir,
             results_dir=results_dir,
             consolidate_log=consolidate_log,
-            remove_cloned_repository=remove_cloned_repository,
+            remove_cloned_dir=remove_cloned_dir,
             verbose=verbose)
     repo.search(search_list=search_list)

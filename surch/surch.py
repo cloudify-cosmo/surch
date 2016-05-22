@@ -41,9 +41,9 @@ def main():
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
-@click.option('--show-result', default=False, is_flag=True)
+@click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, show_result,
+def surch_repo(repo_url, config_file, string, print_result,
                remove, cloned_repo_dir, log, verbose):
     """Search a single repository
     """
@@ -52,15 +52,13 @@ def surch_repo(repo_url, config_file, string, show_result,
 
     repo.search(
         config_file=config_file,
+        print_result=print_result,
         search_list=list(string),
         repo_url=repo_url,
         cloned_repo_dir=cloned_repo_dir,
         results_dir=log,
-        remove_cloned_repository=remove,
+        remove_cloned_repo=remove,
         verbose=verbose)
-
-    if show_result:
-        handler.show_result(log=log)
 
 
 @main.command(name='org')
@@ -85,9 +83,9 @@ def surch_repo(repo_url, config_file, string, show_result,
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
-@click.option('--show-result', default=False, is_flag=True)
+@click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_org(organization_name, config_file, string, skip, user, show_result,
+def surch_org(organization_name, config_file, string, skip, user, print_result,
               remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
@@ -96,18 +94,16 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
 
     organization.search(
         config_file=config_file,
+        print_result=print_result,
         search_list=list(string),
         repos_to_skip=skip,
         organization=organization_name,
         git_user=user,
         git_password=password,
         cloned_repos_path=cloned_repos_path,
-        remove_cloned_repository=remove,
+        remove_cloned_repos=remove,
         results_dir=log,
         verbose=verbose)
-
-    if show_result:
-        handler.show_result(log=log)
 
 
 @main.command(name='user')
@@ -132,10 +128,10 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
-@click.option('--show-result', default=False, is_flag=True)
+@click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_user(organization_name, config_file, string, skip, user,
-               remove, password, cloned_repos_path, log, show_result, verbose):
+               remove, password, cloned_repos_path, log, print_result, verbose):
     """Search all or some repositories for a user
     """
 
@@ -149,10 +145,8 @@ def surch_user(organization_name, config_file, string, skip, user,
         organization=organization_name,
         git_user=user,
         git_password=password,
+        print_result=print_result,
         cloned_repos_path=cloned_repos_path,
-        remove_cloned_repository=remove,
+        remove_cloned_repos=remove,
         results_dir=log,
         verbose=verbose)
-
-    if show_result:
-        handler.show_result(log=log)
