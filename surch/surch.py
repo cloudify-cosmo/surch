@@ -34,8 +34,6 @@ def main():
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
-@click.option('--source', multiple=True, default=[],
-              help='plugins name.')
 @click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
               help='Directory to clone repository to.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
@@ -45,13 +43,12 @@ def main():
               help='Remove clones repos')
 @click.option('--show-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, show_result, source,
+def surch_repo(repo_url, config_file, string, show_result,
                remove, cloned_repo_dir, log, verbose):
     """Search a single repository
     """
 
     logger.configure()
-    source = handler.source_handle(config_file, source)
 
     repo.search(
         config_file=config_file,
@@ -62,10 +59,6 @@ def surch_repo(repo_url, config_file, string, show_result, source,
         remove_cloned_repository=remove,
         verbose=verbose)
 
-    if 'pagerduty' in source:
-        handler.pagerduty_trigger(config_file=config_file,
-                                  log=log,
-                                  verbose=verbose)
     if show_result:
         handler.show_result(log=log)
 
@@ -78,8 +71,6 @@ def surch_repo(repo_url, config_file, string, show_result, source,
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
-@click.option('--source', multiple=True,
-              help='plugins name.')
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
@@ -97,12 +88,11 @@ def surch_repo(repo_url, config_file, string, show_result, source,
 @click.option('--show-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, skip, user, show_result,
-              source, remove, password, cloned_repos_path, log, verbose):
+              remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
 
     logger.configure()
-    source = handler.source_handle(config_file, source)
 
     organization.search(
         config_file=config_file,
@@ -116,10 +106,6 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
         results_dir=log,
         verbose=verbose)
 
-    if 'pagerduty' in source:
-        handler.pagerduty_trigger(config_file=config_file,
-                                  log=log,
-                                  verbose=verbose)
     if show_result:
         handler.show_result(log=log)
 
@@ -132,8 +118,6 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
 @click.option('-s', '--string', multiple=True, required=False,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
-@click.option('--source', multiple=True,
-              help='Plugins name.')
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
@@ -150,13 +134,12 @@ def surch_org(organization_name, config_file, string, skip, user, show_result,
               help='Remove clones repos')
 @click.option('--show-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_user(organization_name, config_file, string, skip, user, source,
+def surch_user(organization_name, config_file, string, skip, user,
                remove, password, cloned_repos_path, log, show_result, verbose):
     """Search all or some repositories for a user
     """
 
     logger.configure()
-    source = handler.source_handle(config_file, source)
 
     organization.search(
         config_file=config_file,
@@ -171,9 +154,5 @@ def surch_user(organization_name, config_file, string, skip, user, source,
         results_dir=log,
         verbose=verbose)
 
-    if 'pagerduty' in source:
-        handler.pagerduty_trigger(config_file=config_file,
-                                  log=log,
-                                  verbose=verbose)
     if show_result:
         handler.show_result(log=log)
