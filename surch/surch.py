@@ -13,8 +13,9 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import click
 import shutil
+
+import click
 
 from . import logger, repo, organization, constants
 
@@ -34,28 +35,28 @@ def main():
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
-@click.option('-p', '--cloned-repo-path', default=constants.DEFAULT_PATH,
+@click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
               help='Directory to clone repository to.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this file. '
+              help='All results will be logged to this directory. '
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, pager,
-               remove, cloned_repo_path, log, verbose):
+def surch_repo(repo_url, config_file, string,
+               remove, cloned_repo_dir, log, verbose):
     """Search a single repository"""
     logger.configure()
     repo.search(
         config_file=config_file,
         search_list=list(string),
         repo_url=repo_url,
-        cloned_repo_path=cloned_repo_path,
-        results_file_path=log,
+        cloned_repo_dir=cloned_repo_dir,
+        results_dir=log,
         verbose=verbose)
 
     if remove:
-        shutil.rmtree(cloned_repo_path)
+        shutil.rmtree(cloned_repo_dir)
 
 
 @main.command(name='org')
@@ -93,7 +94,7 @@ def surch_org(organization_name, config_file, string, skip, user,
         git_user=user,
         git_password=password,
         cloned_repos_path=cloned_repos_path,
-        results_file_path=log,
+        results_dir=log,
         verbose=verbose)
 
     if remove:
@@ -123,8 +124,8 @@ def surch_org(organization_name, config_file, string, skip, user,
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clones repos')
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_org(organization_name, config_file, string, skip, user,
-              remove, password, cloned_repos_path, log, verbose):
+def surch_user(organization_name, config_file, string, skip, user,
+               remove, password, cloned_repos_path, log, verbose):
     """Surch all repositories in an user"""
     logger.configure()
     organization.search(
@@ -136,7 +137,7 @@ def surch_org(organization_name, config_file, string, skip, user,
         git_user=user,
         git_password=password,
         cloned_repos_path=cloned_repos_path,
-        results_file_path=log,
+        results_dir=log,
         verbose=verbose)
 
     if remove:

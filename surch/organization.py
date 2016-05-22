@@ -38,14 +38,14 @@ class Organization(object):
             organization_flag=True,
             repos_to_skip=None,
             consolidate_log=False,
-            cloned_repos_path=constants.DEFAULT_PATH,
-            results_file_path=constants.RESULTS_PATH,
+            cloned_repos_path=constants.CLONED_REPOS_PATH,
+            results_dir=constants.RESULTS_PATH,
             verbose=False):
         """Surch instance define var from CLI or config file
         """
-        utils.handle_results_file(results_file_path, consolidate_log)
+        utils.handle_results_file(results_dir, consolidate_log)
         self.organization = organization
-        self.results_file_path = results_file_path
+        self.results_dir = results_dir
         self.search_list = search_list
         self.repos_to_skip = repos_to_skip or []
         if not git_user or not git_user:
@@ -121,7 +121,7 @@ class Organization(object):
                     search_list=self.search_list,
                     repo_url=repository_data[url_type],
                     cloned_repo_path=self.cloned_repos_path,
-                    results_file_path=self.results_file_path,
+                    results_dir=self.results_dir,
                     consolidate_log=True,
                     verbose=self.verbose)
 
@@ -135,7 +135,7 @@ def search(
         organization_flag=True,
         config_file=None,
         cloned_repos_path=constants.DEFAULT_PATH,
-        results_file_path=constants.RESULTS_PATH,
+        results_dir=constants.RESULTS_PATH,
         verbose=False):
     if config_file:
         org = Organization.init_with_config_file(config_file, verbose)
@@ -148,7 +148,7 @@ def search(
             git_password=git_password,
             repos_to_skip=repos_to_skip,
             cloned_repos_path=cloned_repos_path,
-            results_file_path=results_file_path,
+            results_dir=results_dir,
             verbose=verbose)
 
     org.search()
