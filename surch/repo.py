@@ -204,7 +204,7 @@ class Repo(object):
         results = self._search(search_list, commits)
         self._write_results(results)
         if self.remove_cloned_dir:
-            utils.remove_repos_folder(path=self.repo_path)
+            utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_results_summary(self.error_summary, lgr)

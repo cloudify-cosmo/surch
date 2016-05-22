@@ -150,7 +150,7 @@ class Organization(object):
                     cloned_repo_dir=self.cloned_repos_path,
                     results_dir=self.results_dir,
                     print_result=False,
-                    remove_cloned_repo=False,
+                    remove_cloned_dir=False,
                     consolidate_log=True,
                     verbose=self.verbose)
         if self.remove_cloned_dir:

@@ -57,7 +57,7 @@ def surch_repo(repo_url, config_file, string, print_result,
         repo_url=repo_url,
         cloned_repo_dir=cloned_repo_dir,
         results_dir=log,
-        remove_cloned_repo=remove,
+        remove_cloned_dir=remove,
         verbose=verbose)
 
 
@@ -101,7 +101,7 @@ def surch_org(organization_name, config_file, string, skip, user, print_result,
         git_user=user,
         git_password=password,
         cloned_repos_path=cloned_repos_path,
-        remove_cloned_repos=remove,
+        remove_cloned_dir=remove,
         results_dir=log,
         verbose=verbose)
 
@@ -147,6 +147,6 @@ def surch_user(organization_name, config_file, string, skip, user,
         git_password=password,
         print_result=print_result,
         cloned_repos_path=cloned_repos_path,
-        remove_cloned_repos=remove,
+        remove_cloned_dir=remove,
         results_dir=log,
         verbose=verbose)
