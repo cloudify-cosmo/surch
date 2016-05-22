@@ -170,6 +170,7 @@ def search(
             organization_flag=organization_flag)
     else:
         org = Organization(
+            search_list=search_list,
             organization=organization,
             git_user=git_user,
             organization_flag=organization_flag,

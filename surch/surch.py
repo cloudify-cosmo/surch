@@ -143,7 +143,7 @@ def surch_user(organization_name, config_file, string, skip, user,
 
     organization.search(
         config_file=config_file,
-        search_list=string,
+        search_list=list(string),
         repos_to_skip=skip,
         organization_flag=False,
         organization=organization_name,
