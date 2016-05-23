@@ -38,7 +38,7 @@ def read_config_file(config_file, verbose=False, remove_cloned_dir=False,
 
 
 def remove_repos_folder(path=None):
-    lgr.info('Remove this folder: {0}'.format(path))
+    lgr.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 
 
@@ -48,7 +48,7 @@ def print_results_summary(error_summary, lgr):
 
 
 def print_result(result_file=None):
-    with open(result_file, 'r') as results_file:
+    with open(result_file) as results_file:
         results = results_file.read()
     lgr.info(results)
 

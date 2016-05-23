@@ -15,7 +15,6 @@
 
 import click
 
-from plugins import handler
 from . import logger, repo, organization, constants
 
 lgr = logger.init()
