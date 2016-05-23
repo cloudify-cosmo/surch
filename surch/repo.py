@@ -133,11 +133,23 @@ class Repo(object):
         """
         lgr.debug('Retrieving list of commits...')
         try:
-            commits = subprocess.check_output(
-                'git -C {0} rev-list --all'.format(self.repo_path), shell=True)
-            commit_list = commits.splitlines()
-            self.commits = len(commit_list)
-            return commit_list
+            commit_list = []
+            branches = subprocess.check_output(
+                "git -C {0} branch -a".format(self.repo_path), shell=True)
+            branches = branches.splitlines()
+            for branch in branches:
+                if "/" in str(branch):
+                    name = str(branch).rsplit('/', 1)[-1]
+                    commits_per_branch = subprocess.check_output(
+                        "git -C {0} rev-list origin/{1}".format(
+                            self.repo_path, name), shell=True)
+                    commits_per_branch = commits_per_branch.splitlines()
+                    for commit_per_branch in commits_per_branch:
+                        commit_list.append(commit_per_branch)
+                    lgr.info('Found {0} commits in {1}...'.format(
+                        len(commit_list), self.repo_name))
+                    self.commits = len(commit_list)
+                    return commit_list
         except subprocess.CalledProcessError:
             return []
 
