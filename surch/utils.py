@@ -14,22 +14,32 @@
 #    * limitations under the License.
 
 import os
-import yaml
 import shutil
 from datetime import datetime
+
+import yaml
 
 from . import logger
 
 lgr = logger.init()
 
 
-def read_config_file(config_file, verbose=False):
+def read_config_file(config_file, verbose=False, remove_cloned_dir=False,
+                     organization_flag=True, print_result=False):
     """Define vars from "config.yaml" file
     """
-    with open(config_file, 'r') as config:
+    with open(config_file) as config:
         conf_vars = yaml.load(config.read())
+    conf_vars.setdefault('print_result', print_result)
     conf_vars.setdefault('verbose', verbose)
+    conf_vars.setdefault('organization_flag', organization_flag)
+    conf_vars.setdefault('remove_cloned_dir', remove_cloned_dir)
     return conf_vars
+
+
+def remove_repos_folder(path=None):
+    lgr.info('Removing: {0}...'.format(path))
+    shutil.rmtree(path)
 
 
 def print_results_summary(error_summary, lgr):
@@ -37,15 +47,21 @@ def print_results_summary(error_summary, lgr):
         '\n'.join(error_summary)))
 
 
+def print_result(result_file=None):
+    with open(result_file) as results_file:
+        results = results_file.read()
+    lgr.info(results)
+
+
 def convert_to_seconds(start, end):
     return str(round(end - start, 3))
 
 
-def find_string_between_strings(s, first, last):
+def find_string_between_strings(string, first, last):
     try:
-        start = s.index(first) + len(first)
-        end = s.index(last, start)
-        return s[start:end]
+        start = string.index(first) + len(first)
+        end = string.index(last, start)
+        return string[start:end]
     except ValueError:
         return ' '
 

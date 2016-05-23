@@ -33,12 +33,20 @@ class Repo(object):
     def __init__(
             self,
             repo_url,
+            search_list,
             cloned_repo_dir=constants.CLONED_REPOS_PATH,
             results_dir=constants.RESULTS_PATH,
             consolidate_log=False,
-            verbose=False):
+            verbose=False,
+            print_result=False,
+            remove_cloned_dir=False,
+            **kwargs):
         """Surch instance define var from CLI or config file
         """
+
+        self.print_result = print_result
+        self.search_list = search_list
+        self.remove_cloned_dir = remove_cloned_dir
         self.error_summary = []
         self.results = 0
         self.repo_url = repo_url
@@ -48,7 +56,6 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
-
         self.results_file_path = os.path.join(
             results_dir, self.org_name, 'results.json')
         utils.handle_results_file(self.results_file_path, consolidate_log)
@@ -61,8 +68,11 @@ class Repo(object):
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
-    def init_with_config_file(cls, config_file, verbose=False):
-        conf_vars = utils.read_config_file(config_file, verbose)
+    def init_with_config_file(cls, config_file, print_result=False,
+                              verbose=False):
+        conf_vars = utils.read_config_file(print_result=print_result,
+                                           config_file=config_file,
+                                           verbose=verbose)
         return cls(**conf_vars)
 
     @retrying.retry(stop_max_attempt_number=3)
@@ -70,6 +80,7 @@ class Repo(object):
         """This method check if the repo exist in the
         path and run clone or pull
         """
+
         def run(command):
             try:
                 proc = subprocess.Popen(
@@ -182,6 +193,7 @@ class Repo(object):
         return name, email, commit_time
 
     def search(self, search_list):
+        search_list = search_list or self.search_list
         if len(search_list) == 0:
             lgr.error('You must supply at least one string to search for.')
             sys.exit(1)
@@ -191,13 +203,16 @@ class Repo(object):
         commits = self._get_all_commits()
         results = self._search(search_list, commits)
         self._write_results(results)
-
+        if self.remove_cloned_dir:
+            utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_results_summary(self.error_summary, lgr)
         lgr.info('Found {0} results in {1} commits.'.format(
             self.results, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
+        if self.print_result:
+            utils.print_result(self.results_file_path)
 
 
 def search(
@@ -207,15 +222,23 @@ def search(
         cloned_repo_dir=constants.CLONED_REPOS_PATH,
         results_dir=constants.RESULTS_PATH,
         consolidate_log=False,
-        verbose=False):
+        print_result=False,
+        verbose=False,
+        remove_cloned_dir=False,
+        **kwargs):
 
     if config_file:
-        repo = Repo.init_with_config_file(config_file, verbose)
+        repo = Repo.init_with_config_file(config_file=config_file,
+                                          print_result=print_result,
+                                          verbose=verbose)
     else:
         repo = Repo(
+            print_result=print_result,
             repo_url=repo_url,
+            search_list=search_list,
             cloned_repo_dir=cloned_repo_dir,
             results_dir=results_dir,
             consolidate_log=consolidate_log,
+            remove_cloned_dir=remove_cloned_dir,
             verbose=verbose)
-    repo.search(search_list)
+    repo.search(search_list=search_list)

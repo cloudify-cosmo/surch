@@ -60,7 +60,7 @@ def configure():
     if os.path.isfile(log_dir):
         sys.exit('File {0} exists - log directory cannot be created '
                  'there. please remove the file and try again.'.format(
-                     log_dir))
+            log_dir))
     try:
         if not os.path.exists(log_dir) and not len(log_dir) == 0:
             os.makedirs(log_dir)
@@ -70,4 +70,4 @@ def configure():
         sys.exit('Could not configure logger.'
                  ' verify your logger config'
                  ' and permissions to write to {0} ({1})'.format(
-                     log_file, str(ex)))
+            log_file, str(ex)))
