@@ -33,29 +33,33 @@ def main():
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
+@click.option('-m', '--commit', required=False, multiple=True,
+              help='Commits to search in. '
+              'This can be passed multiple times.')
 @click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
               help='Directory to clone repository to.')
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this directory. '
                    '[defaults to {0}]'.format(constants.RESULTS_PATH))
-@click.option('-R', '--remove', default=False, is_flag=True,
-              help='Remove clones repos')
+@click.option('-r', '--remove', default=False, is_flag=True,
+              help='Remove cloned repos')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, print_result,
-               remove, cloned_repo_dir, log, verbose):
+def surch_repo(repo_url, config_file, string, commit, cloned_repo_dir,
+               log, remove, print_result, verbose):
     """Search a single repository
     """
 
     logger.configure()
 
     repo.search(
-        config_file=config_file,
-        print_result=print_result,
         search_list=list(string),
         repo_url=repo_url,
+        commit_list=list(commit),
+        config_file=config_file,
         cloned_repo_dir=cloned_repo_dir,
         results_dir=log,
+        print_result=print_result,
         remove_cloned_dir=remove,
         verbose=verbose)
 
@@ -137,7 +141,8 @@ def surch_org(organization_name, config_file, string, skip, repos, user,
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_user(organization_name, config_file, string, skip, repos, user,
-               remove, password, cloned_repos_path, log, print_result, verbose):
+               remove, password, cloned_repos_path, log, print_result,
+               verbose):
     """Search all or some repositories for a user
     """
 

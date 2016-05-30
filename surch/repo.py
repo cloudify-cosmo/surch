@@ -65,6 +65,8 @@ class Repo(object):
             indent=4,
             separators=(',', ': '))
 
+        self.commits = 0
+
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
@@ -128,17 +130,24 @@ class Repo(object):
             matching_commits.append(self._search_commit(commit, search_string))
         return matching_commits
 
-    def _get_all_commits(self):
+    def _get_commits(self, commit=None):
         """Get the sha (number) of the commit
         """
         lgr.debug('Retrieving list of commits...')
+        if commit:
+            cmd = 'git -C {0} rev-list {1} --max-count=1'.format(
+                self.repo_path, commit)
+        else:
+            cmd = 'git -C {0} rev-list --all'.format(self.repo_path)
+
         try:
-            commits = subprocess.check_output(
-                'git -C {0} rev-list --all'.format(self.repo_path), shell=True)
+            commits = subprocess.check_output(cmd, shell=True)
             commit_list = commits.splitlines()
-            self.commits = len(commit_list)
+            self.commits += len(commit_list)
             return commit_list
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as ex:
+            if commit and ex.returncode == 128:
+                raise RuntimeError('Commit {0} does not exist.'.format(commit))
             return []
 
     def _search_commit(self, commit, search_string):
@@ -192,7 +201,7 @@ class Repo(object):
             details, 'Date:   ', '+').strip()
         return name, email, commit_time
 
-    def search(self, search_list):
+    def search(self, search_list, commit_list=None):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
             lgr.error('You must supply at least one string to search for.')
@@ -200,16 +209,22 @@ class Repo(object):
 
         start = time()
         self._clone_or_pull()
-        commits = self._get_all_commits()
+        if commit_list:
+            commits = []
+            for commit in commit_list:
+                full_commit_sha = self._get_commits(commit)[0]
+                commits.append(full_commit_sha)
+        else:
+            commits = self._get_commits()
         results = self._search(search_list, commits)
         self._write_results(results)
+        lgr.info('Found {0} results in {1} commits.'.format(
+            self.results, self.commits))
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_results_summary(self.error_summary, lgr)
-        lgr.info('Found {0} results in {1} commits.'.format(
-            self.results, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
         if self.print_result:
             utils.print_result(self.results_file_path)
@@ -217,6 +232,7 @@ class Repo(object):
 
 def search(
         search_list,
+        commit_list,
         repo_url,
         config_file=None,
         cloned_repo_dir=constants.CLONED_REPOS_PATH,
@@ -233,12 +249,12 @@ def search(
                                           verbose=verbose)
     else:
         repo = Repo(
+            search_list=search_list,
             print_result=print_result,
             repo_url=repo_url,
-            search_list=search_list,
             cloned_repo_dir=cloned_repo_dir,
             results_dir=results_dir,
             consolidate_log=consolidate_log,
             remove_cloned_dir=remove_cloned_dir,
             verbose=verbose)
-    repo.search(search_list=search_list)
+    repo.search(search_list=search_list, commit_list=commit_list)
