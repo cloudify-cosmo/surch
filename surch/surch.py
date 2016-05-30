@@ -71,6 +71,9 @@ def surch_repo(repo_url, config_file, string, print_result,
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
+@click.option('--repos', default='', multiple=True,
+              help='Repo you would like to include. '
+                   'This can be passed multiple times.')
 @click.option('-U', '--user', default=None,
               help='Git user name for authenticate.')
 @click.option('-P', '--password', default=None, required=False,
@@ -84,8 +87,8 @@ def surch_repo(repo_url, config_file, string, print_result,
               help='Remove clones repos')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_org(organization_name, config_file, string, skip, user, print_result,
-              remove, password, cloned_repos_path, log, verbose):
+def surch_org(organization_name, config_file, string, skip, repos, user,
+              print_result, remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
 
@@ -96,6 +99,7 @@ def surch_org(organization_name, config_file, string, skip, user, print_result,
         print_result=print_result,
         search_list=list(string),
         repos_to_skip=skip,
+        repos_to_check=repos,
         organization=organization_name,
         git_user=user,
         git_password=password,
@@ -116,6 +120,9 @@ def surch_org(organization_name, config_file, string, skip, user, print_result,
 @click.option('--skip', default='', multiple=True,
               help='Repo you would like to skip. '
                    'This can be passed multiple times.')
+@click.option('--repos', default='', multiple=True,
+              help='Repo you would like to include. '
+                   'This can be passed multiple times.')
 @click.option('-U', '--user', default=None,
               help='Git user name for authenticate.')
 @click.option('-P', '--password', default=None, required=False,
@@ -129,7 +136,7 @@ def surch_org(organization_name, config_file, string, skip, user, print_result,
               help='Remove clones repos')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_user(organization_name, config_file, string, skip, user,
+def surch_user(organization_name, config_file, string, skip, repos, user,
                remove, password, cloned_repos_path, log, print_result, verbose):
     """Search all or some repositories for a user
     """
@@ -140,6 +147,7 @@ def surch_user(organization_name, config_file, string, skip, user,
         config_file=config_file,
         search_list=list(string),
         repos_to_skip=skip,
+        repos_to_check=repos,
         organization_flag=False,
         organization=organization_name,
         git_user=user,
