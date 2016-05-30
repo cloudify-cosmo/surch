@@ -108,7 +108,7 @@ class Organization(object):
             requests.get(
                 ORG_DETAILS_API_URL.format(
                     self.item_type, self.organization), auth=auth)
-        if '<Response [404]>' in str(repository_data):
+        if repository_data.status_code == requests.codes.NOT_FOUND:
             lgr.error(
                 'The organization or user {0} could not be found. '
                 'Please make sure you use the correct type (org/user).'.format(
