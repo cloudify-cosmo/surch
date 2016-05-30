@@ -39,6 +39,7 @@ class Organization(object):
             print_result=False,
             organization_flag=True,
             repos_to_skip=None,
+            repos_to_check=None,
             consolidate_log=False,
             cloned_repos_path=constants.CLONED_REPOS_PATH,
             results_dir=constants.RESULTS_PATH,
@@ -51,8 +52,12 @@ class Organization(object):
         self.search_list = search_list
         self.organization = organization
         self.results_dir = results_dir
+        if repos_to_skip and repos_to_check:
+            lgr.warn("Can't run surch with list of exclude and includes repo ")
+            sys.exit(1)
         self.repos_to_skip = repos_to_skip or []
-        if not git_user or not git_user:
+        self.repos_to_check = repos_to_check or []
+        if not git_user or not git_password:
             lgr.warn(
                 'Choosing not to provide GitHub credentials limits '
                 'requests to GitHub to 60/h. This might affect cloning.')
@@ -143,16 +148,28 @@ class Organization(object):
         self.cloned_repos_path = os.path.join(self.organization,
                                               self.cloned_repos_path)
         for repository_data in self.repository_specific_data:
-            if repository_data['name'] not in self.repos_to_skip:
-                repo.search(
-                    search_list=search_list,
-                    repo_url=repository_data[url_type],
-                    cloned_repo_dir=self.cloned_repos_path,
-                    results_dir=self.results_dir,
-                    print_result=False,
-                    remove_cloned_dir=False,
-                    consolidate_log=True,
-                    verbose=self.verbose)
+            if len(self.repos_to_check) > 0:
+                if repository_data['name'] in self.repos_to_check:
+                    repo.search(
+                        search_list=search_list,
+                        repo_url=repository_data[url_type],
+                        cloned_repo_dir=self.cloned_repos_path,
+                        results_dir=self.results_dir,
+                        print_result=False,
+                        remove_cloned_dir=False,
+                        consolidate_log=True,
+                        verbose=self.verbose)
+            else:
+                if repository_data['name'] not in self.repos_to_skip:
+                    repo.search(
+                        search_list=search_list,
+                        repo_url=repository_data[url_type],
+                        cloned_repo_dir=self.cloned_repos_path,
+                        results_dir=self.results_dir,
+                        print_result=False,
+                        remove_cloned_dir=False,
+                        consolidate_log=True,
+                        verbose=self.verbose)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_path)
         if self.print_result:
@@ -165,6 +182,7 @@ def search(
         git_user=None,
         git_password=None,
         repos_to_skip=None,
+        repos_to_check=None,
         organization_flag=True,
         config_file=None,
         cloned_repos_path=constants.CLONED_REPOS_PATH,
@@ -190,6 +208,7 @@ def search(
             organization_flag=organization_flag,
             git_password=git_password,
             repos_to_skip=repos_to_skip,
+            repos_to_check=repos_to_check,
             cloned_repos_path=cloned_repos_path,
             results_dir=results_dir,
             remove_cloned_dir=remove_cloned_dir,
