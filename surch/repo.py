@@ -28,6 +28,8 @@ BLOB_URL = 'https://github.com/{0}/{1}/blob/{2}/{3}'
 
 lgr = logger.init()
 
+# TODO: find_executable('git')
+
 
 class Repo(object):
     def __init__(
@@ -43,15 +45,14 @@ class Repo(object):
             **kwargs):
         """Surch instance define var from CLI or config file
         """
+        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
-        self.error_summary = []
-        self.results = 0
         self.repo_url = repo_url
-        self.repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
         self.org_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
+        self.repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
         self.cloned_repo_dir = os.path.join(cloned_repo_dir, self.org_name)
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
@@ -59,13 +60,9 @@ class Repo(object):
         self.results_file_path = os.path.join(
             results_dir, self.org_name, 'results.json')
         utils.handle_results_file(self.results_file_path, consolidate_log)
-        self.db = TinyDB(
-            self.results_file_path,
-            sort_keys=True,
-            indent=4,
-            separators=(',', ': '))
 
-        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
+        self.error_summary = []
+        self.result_count = 0
 
     @classmethod
     def init_with_config_file(cls, config_file, print_result=False,
@@ -77,8 +74,8 @@ class Repo(object):
 
     @retrying.retry(stop_max_attempt_number=3)
     def _clone_or_pull(self):
-        """This method check if the repo exist in the
-        path and run clone or pull
+        """Clone the repo if it doesn't exist in the local path.
+        Otherwise, pull it.
         """
 
         def run(command):
@@ -118,11 +115,12 @@ class Repo(object):
         return search_string
 
     def _search(self, search_list, commits):
-        """Create list of all commits which contain searched strings
+        """Create list of all commits which contains one of the strings
+        we're searching for.
         """
         search_string = self._create_search_string(list(search_list))
         matching_commits = []
-        lgr.info('Scanning repo `{0}` for {1} string(s)...'.format(
+        lgr.info('Scanning repo {0} for {1} string(s)...'.format(
             self.repo_name, len(search_list)))
         for commit in commits:
             matching_commits.append(self._search_commit(commit, search_string))
@@ -151,6 +149,12 @@ class Repo(object):
             return []
 
     def _write_results(self, results):
+        db = TinyDB(
+            self.results_file_path,
+            sort_keys=True,
+            indent=4,
+            separators=(',', ': '))
+
         lgr.info('Writing results to: {0}...'.format(self.results_file_path))
         for matched_files in results:
             for match in matched_files:
@@ -171,8 +175,8 @@ class Repo(object):
                             self.repo_name,
                             commit_sha, filepath)
                     )
-                    self.results += 1
-                    self.db.insert(result)
+                    self.result_count += 1
+                    db.insert(result)
                 except IndexError:
                     # The structre of the output is
                     # sha:filename
@@ -209,7 +213,7 @@ class Repo(object):
         if self.error_summary:
             utils.print_results_summary(self.error_summary, lgr)
         lgr.info('Found {0} results in {1} commits.'.format(
-            self.results, self.commits))
+            self.result_count, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
         if self.print_result:
             utils.print_result(self.results_file_path)

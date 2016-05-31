@@ -46,8 +46,6 @@ class Organization(object):
             verbose=False,
             remove_cloned_dir=False,
             **kwargs):
-        """Surch instance define var from CLI or config file
-        """
         self.print_result = print_result
         self.search_list = search_list
         self.organization = organization
@@ -68,8 +66,8 @@ class Organization(object):
         self.results_file_path = os.path.join(
             results_dir, self.organization, 'results.json')
         self.consolidate_log = consolidate_log
+        self.is_organization = is_organization
         self.item_type = 'orgs' if is_organization else 'users'
-        self.object_type = 'organization' if is_organization else 'user'
         self.cloned_repos_path = cloned_repos_path or os.path.join(
             self.organization, constants.CLONED_REPOS_PATH)
         self.verbose = verbose
@@ -100,28 +98,24 @@ class Organization(object):
             sys.exit(1)
         return response.json()
 
-    def _get_repo_data(self, repo_type, repos_per_page, page_num):
-        response = requests.get(
-            REPO_DETAILS_API_URL.format(
-                self.item_type,
-                self.organization,
-                repo_type,
-                repos_per_page,
-                page_num), auth=self.creds)
+    def _get_repo_data(self, repos_per_page, page_num):
+        response = requests.get(REPO_DETAILS_API_URL.format(
+            self.item_type,
+            self.organization,
+            'public',
+            repos_per_page,
+            page_num), auth=self.creds)
         return response.json()
 
-    def _parse_repo_data(self, repo_data, url_type):
-        return [dict((key, data[key]) for key in ['name', url_type])
+    def _parse_repo_data(self, repo_data):
+        return [dict((key, data[key]) for key in ['name', 'clone_url'])
                 for data in repo_data]
 
-    def _get_repos_data(self, url_type='clone_url', repo_type='public',
-                        repos_per_page=100):
-        """This method get from GitHub the git url list for cloning
-        """
+    def _get_repos_data(self, repos_per_page=100):
         lgr.info('Retrieving repository information for the {0}...'.format(
-            self.object_type))
+            'organization' if self.is_organization else 'user'))
         org_data = self._get_org_data()
-        repo_count = org_data['{0}_repos'.format(repo_type)]
+        repo_count = org_data['public_repos']
         last_page_number = repo_count / repos_per_page
         if (repo_count % repos_per_page) > 0:
             # Adding 2 because 1 for the extra repos that mean more page,
@@ -129,13 +123,11 @@ class Organization(object):
             last_page_number += 2
             repos_data = []
             for page_num in range(1, last_page_number):
-                repo_data = self._get_repo_data(
-                    repo_type, repos_per_page, page_num)
-                repos_data.extend(self._parse_repo_data(repo_data, url_type))
-            # raise Exception(repos_data)
+                repo_data = self._get_repo_data(repos_per_page, page_num)
+                repos_data.extend(self._parse_repo_data(repo_data))
             return repos_data
 
-    def search(self, search_list, url_type='clone_url'):
+    def search(self, search_list):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
             lgr.error('You must supply at least one string to search for.')
@@ -143,14 +135,12 @@ class Organization(object):
         repos_data = self._get_repos_data()
         if not os.path.isdir(self.cloned_repos_path):
             os.makedirs(self.cloned_repos_path)
-        utils.handle_results_file(
-            self.results_file_path, self.consolidate_log)
+        utils.handle_results_file(self.results_file_path, self.consolidate_log)
         for repo_data in repos_data:
-            # if len(self.repos_to_check) > 0:
             if repo_data['name'] in self.repos_to_check:
                 repo.search(
                     search_list=search_list,
-                    repo_url=repo_data[url_type],
+                    repo_url=repo_data['clone_url'],
                     cloned_repo_dir=self.cloned_repos_path,
                     results_dir=self.results_dir,
                     print_result=False,
@@ -160,7 +150,7 @@ class Organization(object):
             elif repo_data['name'] not in self.repos_to_skip:
                 repo.search(
                     search_list=search_list,
-                    repo_url=repo_data[url_type],
+                    repo_url=repo_data['clone_url'],
                     cloned_repo_dir=self.cloned_repos_path,
                     results_dir=self.results_dir,
                     print_result=False,

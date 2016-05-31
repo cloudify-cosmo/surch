@@ -41,7 +41,7 @@ def main():
               '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this directory. '
-              '[defaults to {0}]'.format(constants.RESULTS_PATH)
+              '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-r', '--remove', default=False, is_flag=True,
               help='Remove cloned repos')
 @click.option('--print-result', default=False, is_flag=True)
@@ -143,7 +143,8 @@ def surch_org(organization_name, config_file, string, skip, repos, user,
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_user(organization_name, config_file, string, skip, repos, user,
-               remove, password, cloned_repos_path, log, print_result, verbose):
+               remove, password, cloned_repos_path, log, print_result,
+               verbose):
     """Search all or some repositories for a user
     """
 
