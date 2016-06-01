@@ -153,10 +153,10 @@ class Organization(object):
             os.makedirs(self.cloned_repos_path)
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
 
-        repo_url_list = self.get_include_list(repos_data=repos_data,
+        repos_url_list = self.get_include_list(repos_data=repos_data,
                                               include=self.repos_to_check,
                                               exclude=self.repos_to_skip)
-        for repo_data in repo_url_list:
+        for repo_data in repos_url_list:
             repo.search(
                 search_list=search_list,
                 repo_url=repo_data,
