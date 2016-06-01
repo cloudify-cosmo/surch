@@ -34,8 +34,8 @@ class Organization(object):
             self,
             search_list,
             organization,
-            git_user,
-            git_password,
+            git_user=None,
+            git_password=None,
             print_result=False,
             is_organization=True,
             repos_to_skip=None,
@@ -53,15 +53,15 @@ class Organization(object):
         if repos_to_skip and repos_to_check:
             lgr.warn('You can not both include and exclude repositories.')
             sys.exit(1)
-        self.repos_to_skip = repos_to_skip or []
-        self.repos_to_check = repos_to_check or []
+        self.repos_to_skip = repos_to_skip
+        self.repos_to_check = repos_to_check
         if not git_user or not git_password:
             lgr.warn(
                 'Choosing not to provide GitHub credentials limits '
                 'requests to GitHub to 60/h. This might affect cloning.')
             self.creds = False
         else:
-            self.creds = (self.git_user, self.git_password)
+            self.creds = (git_user, git_password)
         self.remove_cloned_dir = remove_cloned_dir
         self.results_file_path = os.path.join(
             results_dir, self.organization, 'results.json')
@@ -127,6 +127,22 @@ class Organization(object):
                 repos_data.extend(self._parse_repo_data(repo_data))
             return repos_data
 
+    def get_include_list(self, repos_data, include=None, exclude=None):
+        repo_url_list = []
+        if include:
+            for repo_name in include:
+                for repo in repos_data:
+                    if repo['name'] == repo_name:
+                        repo_url_list.append(repo['clone_url'])
+        elif exclude:
+            for repo in repos_data:
+                if repo['name'] not in exclude:
+                    repo_url_list.append(repo['clone_url'])
+        else:
+            for repo in repos_data:
+                repo_url_list.append(repo['clone_url'])
+        return repo_url_list
+
     def search(self, search_list):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
@@ -136,27 +152,20 @@ class Organization(object):
         if not os.path.isdir(self.cloned_repos_path):
             os.makedirs(self.cloned_repos_path)
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
-        for repo_data in repos_data:
-            if repo_data['name'] in self.repos_to_check:
-                repo.search(
-                    search_list=search_list,
-                    repo_url=repo_data['clone_url'],
-                    cloned_repo_dir=self.cloned_repos_path,
-                    results_dir=self.results_dir,
-                    print_result=False,
-                    remove_cloned_dir=False,
-                    consolidate_log=True,
-                    verbose=self.verbose)
-            elif repo_data['name'] not in self.repos_to_skip:
-                repo.search(
-                    search_list=search_list,
-                    repo_url=repo_data['clone_url'],
-                    cloned_repo_dir=self.cloned_repos_path,
-                    results_dir=self.results_dir,
-                    print_result=False,
-                    remove_cloned_dir=False,
-                    consolidate_log=True,
-                    verbose=self.verbose)
+
+        repo_url_list = self.get_include_list(repos_data=repos_data,
+                                              include=self.repos_to_check,
+                                              exclude=self.repos_to_skip)
+        for repo_data in repo_url_list:
+            repo.search(
+                search_list=search_list,
+                repo_url=repo_data,
+                cloned_repo_dir=self.cloned_repos_path,
+                results_dir=self.results_dir,
+                print_result=False,
+                remove_cloned_dir=False,
+                consolidate_log=True,
+                verbose=self.verbose)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_path)
         if self.print_result:

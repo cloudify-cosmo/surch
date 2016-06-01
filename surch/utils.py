@@ -25,14 +25,14 @@ lgr = logger.init()
 
 
 def read_config_file(config_file, verbose=False, remove_cloned_dir=False,
-                     organization_flag=True, print_result=False):
+                     is_organization=True, print_result=False):
     """Define vars from "config.yaml" file
     """
     with open(config_file) as config:
         conf_vars = yaml.load(config.read())
     conf_vars.setdefault('print_result', print_result)
     conf_vars.setdefault('verbose', verbose)
-    conf_vars.setdefault('organization_flag', organization_flag)
+    conf_vars.setdefault('is_organization', is_organization)
     conf_vars.setdefault('remove_cloned_dir', remove_cloned_dir)
     return conf_vars
 

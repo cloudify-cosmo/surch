@@ -127,7 +127,7 @@ class Repo(object):
         return matching_commits
 
     def _get_all_commits(self):
-        """Get the sha (number) of the commit
+        """Get the sha (id) of the commit
         """
         lgr.debug('Retrieving list of commits...')
         try:
