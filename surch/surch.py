@@ -33,9 +33,6 @@ def main():
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
               'This can be passed multiple times.')
-@click.option('-m', '--commit', required=False, multiple=True,
-              help='Commits to search in. '
-              'This can be passed multiple times.')
 @click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
               help='Directory to clone repository to. '
               '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
@@ -46,7 +43,7 @@ def main():
               help='Remove cloned repos')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, print_result, commit,
+def surch_repo(repo_url, config_file, string, print_result,
                remove, cloned_repo_dir, log, verbose):
     """Search a single repository
     """

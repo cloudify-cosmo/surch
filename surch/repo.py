@@ -218,6 +218,27 @@ class Repo(object):
         if self.print_result:
             utils.print_result(self.results_file_path)
 
+    def search_commit(self, search_list, commit):
+        search_list = search_list or self.search_list
+        if len(search_list) == 0:
+            lgr.error('You must supply at least one string to search for.')
+            sys.exit(1)
+
+        start = time()
+        self._clone_or_pull()
+        results = self._search_commit(commit=commit, search_string=search_list)
+        self._write_results(results)
+        if self.remove_cloned_dir:
+            utils.remove_repos_folder(path=self.cloned_repo_dir)
+        total_time = utils.convert_to_seconds(start, time())
+        if self.error_summary:
+            utils.print_results_summary(self.error_summary, lgr)
+        lgr.info('Found {0} results in {1} commits.'.format(
+            self.result_count, self.commits))
+        lgr.debug('Total time: {0} seconds'.format(total_time))
+        if self.print_result:
+            utils.print_result(self.results_file_path)
+
 
 def search(
         search_list,
@@ -245,4 +266,5 @@ def search(
             consolidate_log=consolidate_log,
             remove_cloned_dir=remove_cloned_dir,
             verbose=verbose)
+
     repo.search(search_list=search_list)
