@@ -154,8 +154,8 @@ class Organization(object):
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
 
         repos_url_list = self.get_include_list(repos_data=repos_data,
-                                              include=self.repos_to_check,
-                                              exclude=self.repos_to_skip)
+                                               include=self.repos_to_check,
+                                               exclude=self.repos_to_skip)
         for repo_data in repos_url_list:
             repo.search(
                 search_list=search_list,
