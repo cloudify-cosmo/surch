@@ -24,8 +24,6 @@ from tinydb import TinyDB
 
 from . import logger, utils, constants
 
-BLOB_URL = 'https://github.com/{0}/{1}/blob/{2}/{3}'
-
 lgr = logger.init()
 
 # TODO: find_executable('git')
@@ -36,12 +34,12 @@ class Repo(object):
             self,
             repo_url,
             search_list,
-            cloned_repo_dir=constants.CLONED_REPOS_PATH,
-            results_dir=constants.RESULTS_PATH,
-            consolidate_log=False,
             verbose=False,
             print_result=False,
+            consolidate_log=False,
             remove_cloned_dir=False,
+            results_dir=constants.RESULTS_PATH,
+            cloned_repo_dir=constants.CLONED_REPOS_PATH,
             **kwargs):
         """Surch instance define var from CLI or config file
         """
@@ -67,9 +65,9 @@ class Repo(object):
     @classmethod
     def init_with_config_file(cls, config_file, print_result=False,
                               verbose=False):
-        conf_vars = utils.read_config_file(print_result=print_result,
+        conf_vars = utils.read_config_file(verbose=verbose,
                                            config_file=config_file,
-                                           verbose=verbose)
+                                           print_result=print_result)
         return cls(**conf_vars)
 
     @retrying.retry(stop_max_attempt_number=3)
@@ -151,8 +149,8 @@ class Repo(object):
     def _write_results(self, results):
         db = TinyDB(
             self.results_file_path,
-            sort_keys=True,
             indent=4,
+            sort_keys=True,
             separators=(',', ': '))
 
         lgr.info('Writing results to: {0}...'.format(self.results_file_path))
@@ -163,14 +161,14 @@ class Repo(object):
                     username, email, commit_time = \
                         self._get_user_details(commit_sha)
                     result = dict(
-                        organization_name=self.org_name,
-                        repository_name=self.repo_name,
-                        commit_sha=commit_sha,
+                        email=email,
                         filepath=filepath,
                         username=username,
-                        email=email,
+                        commit_sha=commit_sha,
                         commit_time=commit_time,
-                        blob_url=BLOB_URL.format(
+                        repository_name=self.repo_name,
+                        organization_name=self.org_name,
+                        blob_url=constants.BLOB_URL.format(
                             self.org_name,
                             self.repo_name,
                             commit_sha, filepath)
@@ -241,30 +239,30 @@ class Repo(object):
 
 
 def search(
-        search_list,
         repo_url,
-        config_file=None,
-        cloned_repo_dir=constants.CLONED_REPOS_PATH,
-        results_dir=constants.RESULTS_PATH,
-        consolidate_log=False,
-        print_result=False,
+        search_list,
         verbose=False,
+        config_file=None,
+        print_result=False,
+        consolidate_log=False,
         remove_cloned_dir=False,
+        results_dir=constants.RESULTS_PATH,
+        cloned_repo_dir=constants.CLONED_REPOS_PATH,
         **kwargs):
 
     if config_file:
-        repo = Repo.init_with_config_file(config_file=config_file,
-                                          print_result=print_result,
-                                          verbose=verbose)
+        repo = Repo.init_with_config_file(verbose=verbose,
+                                          config_file=config_file,
+                                          print_result=print_result)
     else:
         repo = Repo(
-            print_result=print_result,
+            verbose=verbose,
             repo_url=repo_url,
-            search_list=search_list,
-            cloned_repo_dir=cloned_repo_dir,
             results_dir=results_dir,
+            search_list=search_list,
+            print_result=print_result,
+            cloned_repo_dir=cloned_repo_dir,
             consolidate_log=consolidate_log,
-            remove_cloned_dir=remove_cloned_dir,
-            verbose=verbose)
+            remove_cloned_dir=remove_cloned_dir)
 
     repo.search(search_list=search_list)

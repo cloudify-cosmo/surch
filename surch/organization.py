@@ -21,11 +21,6 @@ import requests
 
 from . import logger, repo, utils, constants
 
-GITHUB_API_URL = 'https://api.github.com/{0}/{1}'
-REPO_DETAILS_API_URL = \
-    'https://api.github.com/{0}/{1}/repos?type={2}&per_page={3}&page={4}'
-
-
 lgr = logger.init()
 
 
@@ -34,17 +29,17 @@ class Organization(object):
             self,
             search_list,
             organization,
+            verbose=False,
             git_user=None,
             git_password=None,
             print_result=False,
-            is_organization=True,
             repos_to_skip=None,
             repos_to_check=None,
+            is_organization=True,
             consolidate_log=False,
             cloned_repos_path=None,
-            results_dir=constants.RESULTS_PATH,
-            verbose=False,
             remove_cloned_dir=False,
+            results_dir=constants.RESULTS_PATH,
             **kwargs):
         self.print_result = print_result
         self.search_list = search_list
@@ -75,20 +70,21 @@ class Organization(object):
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
-    def init_with_config_file(cls, config_file, verbose=False,
+    def init_with_config_file(cls,
+                              config_file,
+                              verbose=False,
                               print_result=False,
-                              remove_cloned_dir=False,
-                              is_organization=True):
-        conf_vars = utils.read_config_file(
-            config_file=config_file,
-            print_result=print_result,
-            verbose=verbose,
-            remove_cloned_dir=remove_cloned_dir,
-            is_organization=is_organization)
+                              is_organization=True,
+                              remove_cloned_dir=False):
+        conf_vars = utils.read_config_file(verbose=verbose,
+                                           config_file=config_file,
+                                           print_result=print_result,
+                                           is_organization=is_organization,
+                                           remove_cloned_dir=remove_cloned_dir)
         return cls(**conf_vars)
 
     def _get_org_data(self):
-        response = requests.get(GITHUB_API_URL.format(
+        response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.creds)
         if response.status_code == requests.codes.NOT_FOUND:
             lgr.error(
@@ -98,8 +94,8 @@ class Organization(object):
             sys.exit(1)
         return response.json()
 
-    def _get_repo_data(self, repos_per_page, page_num):
-        response = requests.get(REPO_DETAILS_API_URL.format(
+    def _get_repos_list(self, repos_per_page, page_num):
+        response = requests.get(constants.REPO_DETAILS_API_URL.format(
             self.item_type,
             self.organization,
             'public',
@@ -123,7 +119,7 @@ class Organization(object):
             last_page_number += 2
             repos_data = []
             for page_num in range(1, last_page_number):
-                repo_data = self._get_repo_data(repos_per_page, page_num)
+                repo_data = self._get_repos_list(repos_per_page, page_num)
                 repos_data.extend(self._parse_repo_data(repo_data))
             return repos_data
 
@@ -154,18 +150,18 @@ class Organization(object):
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
 
         repos_url_list = self.get_include_list(repos_data=repos_data,
-                                               include=self.repos_to_check,
-                                               exclude=self.repos_to_skip)
+                                               exclude=self.repos_to_skip,
+                                               include=self.repos_to_check)
         for repo_data in repos_url_list:
             repo.search(
-                search_list=search_list,
-                repo_url=repo_data,
-                cloned_repo_dir=self.cloned_repos_path,
-                results_dir=self.results_dir,
                 print_result=False,
-                remove_cloned_dir=False,
+                repo_url=repo_data,
+                verbose=self.verbose,
                 consolidate_log=True,
-                verbose=self.verbose)
+                search_list=search_list,
+                remove_cloned_dir=False,
+                results_dir=self.results_dir,
+                cloned_repo_dir=self.cloned_repos_path)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_path)
         if self.print_result:
@@ -175,39 +171,39 @@ class Organization(object):
 def search(
         search_list,
         organization,
+        verbose=False,
         git_user=None,
+        config_file=None,
         git_password=None,
+        print_result=False,
         repos_to_skip=None,
         repos_to_check=None,
         is_organization=True,
-        config_file=None,
-        cloned_repos_path=constants.CLONED_REPOS_PATH,
-        results_dir=constants.RESULTS_PATH,
-        print_result=False,
         remove_cloned_dir=False,
-        verbose=False,
+        results_dir=constants.RESULTS_PATH,
+        cloned_repos_path=constants.CLONED_REPOS_PATH,
         **kwargs):
 
     if config_file:
         org = Organization.init_with_config_file(
+            verbose=verbose,
             config_file=config_file,
             print_result=print_result,
-            verbose=verbose,
-            remove_cloned_dir=remove_cloned_dir,
-            is_organization=is_organization)
+            is_organization=is_organization,
+            remove_cloned_dir=remove_cloned_dir)
     else:
         org = Organization(
-            print_result=print_result,
-            search_list=search_list,
-            organization=organization,
+            verbose=verbose,
             git_user=git_user,
-            is_organization=is_organization,
+            search_list=search_list,
+            results_dir=results_dir,
             git_password=git_password,
+            organization=organization,
+            print_result=print_result,
             repos_to_skip=repos_to_skip,
             repos_to_check=repos_to_check,
+            is_organization=is_organization,
             cloned_repos_path=cloned_repos_path,
-            results_dir=results_dir,
-            remove_cloned_dir=remove_cloned_dir,
-            verbose=verbose)
+            remove_cloned_dir=remove_cloned_dir)
 
     org.search(search_list=search_list)
