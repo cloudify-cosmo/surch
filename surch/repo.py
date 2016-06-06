@@ -47,6 +47,7 @@ class Repo(object):
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         utils.check_if_cmd_exists_else_exit('git')
+        self.config_file = config_file if config_file else None
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
@@ -72,7 +73,8 @@ class Repo(object):
     @classmethod
     def init_with_config_file(cls, config_file, pager=None, print_result=False,
                               verbose=False):
-        conf_vars = utils.read_config_file(pager=pager, verbose=verbose,
+        conf_vars = utils.read_config_file(pager=pager,
+                                           verbose=verbose,
                                            config_file=config_file,
                                            print_result=print_result)
         return cls(**conf_vars)
@@ -224,7 +226,7 @@ class Repo(object):
         lgr.debug('Total time: {0} seconds'.format(total_time))
         if 'pagerduty' in self.pager:
             handler.pagerduty_trigger(config_file=self.config_file,
-                                    log=self.results_file_path)
+                                      log=self.results_file_path)
 
 
 def search(
