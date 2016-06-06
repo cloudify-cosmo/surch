@@ -31,15 +31,15 @@ class Organization(object):
             organization,
             verbose=False,
             git_user=None,
+            results_dir=None,
             git_password=None,
             print_result=False,
             repos_to_skip=None,
             repos_to_check=None,
             is_organization=True,
             consolidate_log=False,
-            cloned_repos_path=None,
+            cloned_repos_dir=None,
             remove_cloned_dir=False,
-            results_dir=constants.RESULTS_PATH,
             **kwargs):
         """Surch org instance define var from CLI or config file
         """
@@ -63,12 +63,13 @@ class Organization(object):
         else:
             self.git_credentials = (git_user, git_password)
         self.remove_cloned_dir = remove_cloned_dir
-        self.results_file_path = os.path.join(
-            results_dir, self.organization, 'results.json')
+        self.results_file_path = os.path.join(results_dir, 'results.json') or \
+                                 os.path.join(constants.RESULTS_PATH,
+                                              self.organization, 'results.json')
         self.consolidate_log = consolidate_log
         self.is_organization = is_organization
         self.item_type = 'orgs' if is_organization else 'users'
-        self.cloned_repos_path = cloned_repos_path or os.path.join(
+        self.cloned_repos_dir = cloned_repos_dir or os.path.join(
             self.organization, constants.CLONED_REPOS_PATH)
         self.verbose = verbose
 
@@ -148,8 +149,8 @@ class Organization(object):
             lgr.error('You must supply at least one string to search for.')
             sys.exit(1)
         repos_data = self._get_repos_data()
-        if not os.path.isdir(self.cloned_repos_path):
-            os.makedirs(self.cloned_repos_path)
+        if not os.path.isdir(self.cloned_repos_dir):
+            os.makedirs(self.cloned_repos_dir)
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
 
         repos_url_list = self.get_include_list(repos_data=repos_data,
@@ -164,9 +165,9 @@ class Organization(object):
                 search_list=search_list,
                 remove_cloned_dir=False,
                 results_dir=self.results_dir,
-                cloned_repo_dir=self.cloned_repos_path)
+                cloned_repo_dir=self.cloned_repos_dir)
         if self.remove_cloned_dir:
-            utils.remove_repos_folder(path=self.cloned_repos_path)
+            utils.remove_repos_folder(path=self.cloned_repos_dir)
         if self.print_result:
             utils.print_result(self.results_file_path)
 
@@ -184,7 +185,7 @@ def search(
         is_organization=True,
         remove_cloned_dir=False,
         results_dir=constants.RESULTS_PATH,
-        cloned_repos_path=constants.CLONED_REPOS_PATH,
+        cloned_repos_dir=constants.CLONED_REPOS_PATH,
         **kwargs):
 
     utils.check_if_cmd_exists_else_exit('git')
@@ -208,7 +209,7 @@ def search(
             repos_to_skip=repos_to_skip,
             repos_to_check=repos_to_check,
             is_organization=is_organization,
-            cloned_repos_path=cloned_repos_path,
+            cloned_repos_dir=cloned_repos_dir,
             remove_cloned_dir=remove_cloned_dir)
 
     org.search(search_list=search_list)

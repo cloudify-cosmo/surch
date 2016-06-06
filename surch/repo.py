@@ -33,11 +33,11 @@ class Repo(object):
             repo_url,
             search_list,
             verbose=False,
+            results_dir=None,
             print_result=False,
+            cloned_repo_dir=None,
             consolidate_log=False,
             remove_cloned_dir=False,
-            results_dir=constants.RESULTS_PATH,
-            cloned_repo_dir=constants.CLONED_REPOS_PATH,
             **kwargs):
         """Surch repo instance define var from CLI or config file
         """
@@ -48,14 +48,16 @@ class Repo(object):
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
         self.repo_url = repo_url
-        self.org_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
+        self.organization = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
         self.repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-        self.cloned_repo_dir = os.path.join(cloned_repo_dir, self.org_name)
+        self.cloned_repo_dir = cloned_repo_dir or os.path.join(
+            self.organization, constants.CLONED_REPOS_PATH)
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
-        self.results_file_path = os.path.join(
-            results_dir, self.org_name, 'results.json')
+        self.results_file_path = os.path.join(results_dir, 'results.json') or \
+                                 os.path.join(constants.RESULTS_PATH,
+                                              self.organization, 'results.json')
         utils.handle_results_file(self.results_file_path, consolidate_log)
 
         self.error_summary = []
@@ -97,7 +99,7 @@ class Repo(object):
             run('git -C {0} pull {1}'.format(self.repo_path, self.quiet_git))
         else:
             lgr.info('Cloning repo {0} from org {1} to {2}...'.format(
-                self.repo_name, self.org_name, self.repo_path))
+                self.repo_name, self.organization, self.repo_path))
             run('git clone {0} {1} {2}'.format(
                 self.quiet_git, self.repo_url, self.repo_path))
 
@@ -166,9 +168,9 @@ class Repo(object):
                         commit_sha=commit_sha,
                         commit_time=commit_time,
                         repository_name=self.repo_name,
-                        organization_name=self.org_name,
+                        organization_name=self.organization,
                         blob_url=constants.BLOB_URL.format(
-                            self.org_name,
+                            self.organization,
                             self.repo_name,
                             commit_sha, filepath)
                     )

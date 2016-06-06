@@ -74,7 +74,8 @@ def check_if_cmd_exists_else_exit(cmd):
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE) == 0
     if not exsits:
-        lgr.error('you need install git on the system.')
+        lgr.error('Git command not install in the system.'
+                  ' Please install git and run again.')
         sys.exit(1)
 
 

@@ -39,8 +39,9 @@ def main():
 @click.option('-l', '--log', default=constants.RESULTS_PATH,
               help='All results will be logged to this directory. '
               '[defaults to {0}]'.format(constants.RESULTS_PATH))
-@click.option('-r', '--remove', default=False, is_flag=True,
-              help='Remove cloned repos')
+@click.option('-R', '--remove', default=False, is_flag=True,
+              help='Remove clone repo directory. '
+                   'When used -p and -l can\'t be same folder')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_repo(repo_url, config_file, string, print_result,
@@ -51,14 +52,14 @@ def surch_repo(repo_url, config_file, string, print_result,
     logger.configure()
 
     repo.search(
-        config_file=config_file,
-        print_result=print_result,
-        search_list=list(string),
-        repo_url=repo_url,
-        cloned_repo_dir=cloned_repo_dir,
         results_dir=log,
+        verbose=verbose,
+        repo_url=repo_url,
+        config_file=config_file,
+        search_list=list(string),
         remove_cloned_dir=remove,
-        verbose=verbose)
+        print_result=print_result,
+        cloned_repo_dir=cloned_repo_dir)
 
 
 @main.command(name='org')
@@ -86,7 +87,8 @@ def surch_repo(repo_url, config_file, string, print_result,
               help='All results will be logged to this directory. '
               '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
-              help='Remove clones repos')
+              help='Remove clone repo directory. '
+                   'When used -p and -l can\'t be same folder')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, skip, repos, user,
@@ -97,18 +99,18 @@ def surch_org(organization_name, config_file, string, skip, repos, user,
     logger.configure()
 
     organization.search(
-        config_file=config_file,
-        print_result=print_result,
-        search_list=list(string),
+        git_user=user,
+        results_dir=log,
+        verbose=verbose,
         repos_to_skip=skip,
         repos_to_check=repos,
-        organization=organization_name,
-        git_user=user,
         git_password=password,
-        cloned_repos_path=cloned_repos_path,
+        config_file=config_file,
         remove_cloned_dir=remove,
-        results_dir=log,
-        verbose=verbose)
+        search_list=list(string),
+        print_result=print_result,
+        organization=organization_name,
+        cloned_repos_path=cloned_repos_path)
 
 
 @main.command(name='user')
@@ -136,7 +138,8 @@ def surch_org(organization_name, config_file, string, skip, repos, user,
               help='All results will be logged to this directory. '
               '[defaults to {0}]'.format(constants.RESULTS_PATH))
 @click.option('-R', '--remove', default=False, is_flag=True,
-              help='Remove clones repos')
+              help='Remove clone repo directory. '
+                   'When used -p and -l can\'t be same folder')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_user(organization_name, config_file, string, skip, repos, user,
@@ -148,16 +151,16 @@ def surch_user(organization_name, config_file, string, skip, repos, user,
     logger.configure()
 
     organization.search(
-        config_file=config_file,
-        search_list=list(string),
+        git_user=user,
+        results_dir=log,
+        verbose=verbose,
         repos_to_skip=skip,
         repos_to_check=repos,
         is_organization=False,
-        organization=organization_name,
-        git_user=user,
         git_password=password,
-        print_result=print_result,
-        cloned_repos_path=cloned_repos_path,
+        config_file=config_file,
         remove_cloned_dir=remove,
-        results_dir=log,
-        verbose=verbose)
+        search_list=list(string),
+        print_result=print_result,
+        organization=organization_name,
+        cloned_repos_path=cloned_repos_path)
