@@ -30,6 +30,7 @@ class Organization(object):
             config_file=None,
             git_user=None,
             git_password=None,
+            config_file=None,
             repos_to_skip=None,
             repos_to_check=None,
             is_organization=True,
@@ -41,7 +42,6 @@ class Organization(object):
             cloned_repos_dir=None,
             remove_cloned_dir=False,
             **kwargs):
-
         """Surch org instance init
 
         :param organization: organization name (string)
@@ -78,6 +78,9 @@ class Organization(object):
         else:
             self.git_credentials = (git_user, git_password)
 
+        self.config_file = config_file if config_file else None
+        self.pager = handler.plugins_handle(config_file=self.config_file,
+                                            plugins_list=pager)
         self.print_result = print_result
         self.organization = organization
         self.results_dir = results_dir

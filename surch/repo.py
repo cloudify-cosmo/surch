@@ -53,12 +53,13 @@ class Repo(object):
         :param remove_cloned_dir:
                         this flag for removing the clone directory (boolean)
         """
-
         utils.check_if_executable_exists_else_exit('git')
         self.config_file = config_file if config_file else None
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+
+        self.config_file = config_file if config_file else None
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
