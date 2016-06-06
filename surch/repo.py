@@ -217,6 +217,7 @@ class Repo(object):
             self.result_count, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
 
+
 def search(
         repo_url,
         search_list,
