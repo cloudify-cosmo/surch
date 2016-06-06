@@ -70,6 +70,7 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
+        self.config_file = config_file
         self.pager = handler.plugins_handle(config_file=self.config_file,
                                             plugins_list=pager)
         results_dir = \
@@ -243,7 +244,7 @@ class Repo(object):
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
-            utils.print_results_summary(self.error_summary)
+            utils.print_errors_summary(self.error_summary)
         self.logger.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         self.logger.debug('Total time: {0} seconds'.format(total_time))

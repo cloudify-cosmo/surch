@@ -148,6 +148,7 @@ def surch_org(organization_name, config_file, string, include_repo, pager,
 def surch_user(organization_name, config_file, string, include_repo, pager,
                exclude_repo, user, remove, password, cloned_repos_path, log,
                print_result, verbose):
+
     """Search all or some repositories for a user
     """
 

@@ -23,7 +23,6 @@ from plugins import handler
 from . import repo, utils, constants
 
 
-
 class Organization(object):
     def __init__(
             self,
