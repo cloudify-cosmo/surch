@@ -187,6 +187,8 @@ def search(
         cloned_repos_path=constants.CLONED_REPOS_PATH,
         **kwargs):
 
+    utils.check_if_cmd_exists_else_exit('git')
+
     if config_file:
         org = Organization.init_with_config_file(
             verbose=verbose,

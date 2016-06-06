@@ -181,7 +181,7 @@ class Repo(object):
                     # filename
                     # None
                     # and we need both sha and filename and when we don't \
-                    #  get them we do pass
+                    #  get them we skip to the next
                     pass
 
     def _get_user_details(self, sha):
@@ -248,6 +248,8 @@ def search(
         results_dir=constants.RESULTS_PATH,
         cloned_repo_dir=constants.CLONED_REPOS_PATH,
         **kwargs):
+
+    utils.check_if_cmd_exists_else_exit('git')
 
     if config_file:
         repo = Repo.init_with_config_file(verbose=verbose,
