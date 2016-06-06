@@ -166,10 +166,11 @@ class Organization(object):
                 remove_cloned_dir=False,
                 results_dir=self.results_dir,
                 cloned_repo_dir=self.cloned_repos_dir)
-        if self.remove_cloned_dir:
-            utils.remove_repos_folder(path=self.cloned_repos_dir)
         if self.print_result:
             utils.print_result(self.results_file_path)
+        if self.remove_cloned_dir:
+            utils.remove_repos_folder(path=self.cloned_repos_dir)
+
 
 
 def search(
@@ -178,14 +179,14 @@ def search(
         verbose=False,
         git_user=None,
         config_file=None,
+        results_dir=None,
         git_password=None,
         print_result=False,
         repos_to_skip=None,
         repos_to_check=None,
         is_organization=True,
+        cloned_repos_dir=None,
         remove_cloned_dir=False,
-        results_dir=constants.RESULTS_PATH,
-        cloned_repos_dir=constants.CLONED_REPOS_PATH,
         **kwargs):
 
     utils.check_if_cmd_exists_else_exit('git')

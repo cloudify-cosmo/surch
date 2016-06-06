@@ -206,6 +206,8 @@ class Repo(object):
         commits = self._get_all_commits()
         results = self._search(search_list, commits)
         self._write_results(results)
+        if self.print_result:
+            utils.print_result(self.results_file_path)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
@@ -214,41 +216,17 @@ class Repo(object):
         lgr.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
-        if self.print_result:
-            utils.print_result(self.results_file_path)
-
-    def search_commit(self, search_list, commit):
-        search_list = search_list or self.search_list
-        if len(search_list) == 0:
-            lgr.error('You must supply at least one string to search for.')
-            sys.exit(1)
-
-        start = time()
-        self._clone_or_pull()
-        results = self._search_commit(commit=commit, search_string=search_list)
-        self._write_results(results)
-        if self.remove_cloned_dir:
-            utils.remove_repos_folder(path=self.cloned_repo_dir)
-        total_time = utils.convert_to_seconds(start, time())
-        if self.error_summary:
-            utils.print_results_summary(self.error_summary, lgr)
-        lgr.info('Found {0} results in {1} commits.'.format(
-            self.result_count, self.commits))
-        lgr.debug('Total time: {0} seconds'.format(total_time))
-        if self.print_result:
-            utils.print_result(self.results_file_path)
-
 
 def search(
         repo_url,
         search_list,
         verbose=False,
         config_file=None,
+        results_dir=None,
         print_result=False,
+        cloned_repo_dir=None,
         consolidate_log=False,
         remove_cloned_dir=False,
-        results_dir=constants.RESULTS_PATH,
-        cloned_repo_dir=constants.CLONED_REPOS_PATH,
         **kwargs):
 
     utils.check_if_cmd_exists_else_exit('git')
