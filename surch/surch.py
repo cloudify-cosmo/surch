@@ -42,9 +42,11 @@ def main():
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clone repo directory. '
                    'When used -p and -l can\'t be same folder')
+@click.option('--pager', multiple=True, default=[],
+              help='pager plugins(pagerduty).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_repo(repo_url, config_file, string, print_result,
+def surch_repo(repo_url, config_file, string, print_result, pager,
                remove, cloned_repo_dir, log, verbose):
     """Search a single repository
     """
@@ -52,6 +54,7 @@ def surch_repo(repo_url, config_file, string, print_result,
     logger.configure()
 
     repo.search(
+        pager=pager,
         results_dir=log,
         verbose=verbose,
         repo_url=repo_url,
@@ -89,9 +92,11 @@ def surch_repo(repo_url, config_file, string, print_result,
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clone repo directory. '
                    'When used -p and -l can\'t be same folder')
+@click.option('--pager', multiple=True, default=[],
+              help='pager plugins(pagerduty).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_org(organization_name, config_file, string, skip, repos, user,
+def surch_org(organization_name, config_file, string, skip, repos, user, pager,
               print_result, remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
@@ -99,6 +104,7 @@ def surch_org(organization_name, config_file, string, skip, repos, user,
     logger.configure()
 
     organization.search(
+        pager=pager,
         git_user=user,
         results_dir=log,
         verbose=verbose,
@@ -140,9 +146,11 @@ def surch_org(organization_name, config_file, string, skip, repos, user,
 @click.option('-R', '--remove', default=False, is_flag=True,
               help='Remove clone repo directory. '
                    'When used -p and -l can\'t be same folder')
+@click.option('--pager', multiple=True, default=[],
+              help='pager plugins(pagerduty).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_user(organization_name, config_file, string, skip, repos, user,
+def surch_user(organization_name, config_file, string, skip, repos, user, pager,
                remove, password, cloned_repos_path, log, print_result,
                verbose):
     """Search all or some repositories for a user
@@ -151,6 +159,7 @@ def surch_user(organization_name, config_file, string, skip, repos, user,
     logger.configure()
 
     organization.search(
+        pager=pager,
         git_user=user,
         results_dir=log,
         verbose=verbose,
