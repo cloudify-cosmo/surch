@@ -63,9 +63,10 @@ class Organization(object):
         else:
             self.git_credentials = (git_user, git_password)
         self.remove_cloned_dir = remove_cloned_dir
-        self.results_file_path = \
-            os.path.join(results_dir, 'results.json') or os.path.join(
-                constants.RESULTS_PATH, self.organization, 'results.json')
+        results_dir = \
+            os.path.join(results_dir, 'results.json') if results_dir else None
+        self.results_file_path = results_dir or os.path.join(
+            constants.RESULTS_PATH, self.organization, 'results.json')
         self.consolidate_log = consolidate_log
         self.is_organization = is_organization
         self.item_type = 'orgs' if is_organization else 'users'
@@ -167,7 +168,7 @@ class Organization(object):
                 results_dir=self.results_dir,
                 cloned_repo_dir=self.cloned_repos_dir)
         if self.print_result:
-            utils.print_result(self.results_file_path)
+            utils.print_result_file(self.results_file_path)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_dir)
 

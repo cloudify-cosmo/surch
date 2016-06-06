@@ -55,8 +55,9 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
-        self.results_file_path = \
-            os.path.join(results_dir, 'results.json') or os.path.join(
+        results_dir = \
+            os.path.join(results_dir, 'results.json') if results_dir else None
+        self.results_file_path = results_dir or os.path.join(
                 constants.RESULTS_PATH, self.organization, 'results.json')
         utils.handle_results_file(self.results_file_path, consolidate_log)
 
@@ -207,7 +208,7 @@ class Repo(object):
         results = self._search(search_list, commits)
         self._write_results(results)
         if self.print_result:
-            utils.print_result(self.results_file_path)
+            utils.print_result_file(self.results_file_path)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
