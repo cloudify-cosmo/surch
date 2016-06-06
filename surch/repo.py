@@ -58,6 +58,7 @@ class Repo(object):
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+        self.config_file = config_file if config_file else None
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
