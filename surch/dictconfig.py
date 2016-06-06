@@ -464,19 +464,19 @@ class DictConfigurator(BaseConfigurator):
         else:
             klass = self.resolve(config.pop('class'))
             # Special case for handler which refers to another handler
-            if issubclass(klass, logging.handlers.MemoryHandler) and \
-                            'target' in config:
+            if issubclass(klass, logging.handlers.MemoryHandler) \
+                    and 'target' in config:
                 try:
                     config['target'] = \
                         self.config['handlers'][config['target']]
                 except StandardError as e:
                     raise ValueError('Unable to set target handler '
                                      '%r: %s' % (config['target'], e))
-            elif issubclass(klass, logging.handlers.SMTPHandler) and \
-                            'mailhost' in config:
+            elif issubclass(klass, logging.handlers.SMTPHandler) \
+                    and 'mailhost' in config:
                 config['mailhost'] = self.as_tuple(config['mailhost'])
-            elif issubclass(klass, logging.handlers.SysLogHandler) and \
-                            'address' in config:
+            elif issubclass(klass, logging.handlers.SysLogHandler) \
+                    and 'address' in config:
                 config['address'] = self.as_tuple(config['address'])
             factory = klass
         kwargs = dict((k, config[k]) for k in config if valid_ident(k))

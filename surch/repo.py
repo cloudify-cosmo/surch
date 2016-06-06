@@ -55,9 +55,9 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
-        self.results_file_path = os.path.join(results_dir, 'results.json') or \
-                                 os.path.join(constants.RESULTS_PATH,
-                                              self.organization, 'results.json')
+        self.results_file_path = \
+            os.path.join(results_dir, 'results.json') or os.path.join(
+                constants.RESULTS_PATH, self.organization, 'results.json')
         utils.handle_results_file(self.results_file_path, consolidate_log)
 
         self.error_summary = []

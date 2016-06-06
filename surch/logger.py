@@ -58,9 +58,8 @@ def configure():
         sys.exit('Failed retrieving log file path ({0}).'.format(str(ex)))
     log_dir = os.path.dirname(os.path.expanduser(log_file))
     if os.path.isfile(log_dir):
-        sys.exit('File {0} exists - log directory cannot be created '
-                 'there. please remove the file and try again.'.format(
-            log_dir))
+        sys.exit('File {0} exists - log directory cannot be created there.'
+                 ' please remove the file and try again.'.format(log_dir))
     try:
         if not os.path.exists(log_dir) and not len(log_dir) == 0:
             os.makedirs(log_dir)
@@ -69,5 +68,5 @@ def configure():
     except ValueError as ex:
         sys.exit('Could not configure logger.'
                  ' verify your logger config'
-                 ' and permissions to write to {0} ({1})'.format(
-            log_file, str(ex)))
+                 ' and permissions to write '
+                 'to {0} ({1})'.format(log_file, str(ex)))

@@ -63,9 +63,9 @@ class Organization(object):
         else:
             self.git_credentials = (git_user, git_password)
         self.remove_cloned_dir = remove_cloned_dir
-        self.results_file_path = os.path.join(results_dir, 'results.json') or \
-                                 os.path.join(constants.RESULTS_PATH,
-                                              self.organization, 'results.json')
+        self.results_file_path = \
+            os.path.join(results_dir, 'results.json') or os.path.join(
+                constants.RESULTS_PATH, self.organization, 'results.json')
         self.consolidate_log = consolidate_log
         self.is_organization = is_organization
         self.item_type = 'orgs' if is_organization else 'users'
@@ -131,16 +131,16 @@ class Organization(object):
         repo_url_list = []
         if include:
             for repo_name in include:
-                for repo in repos_data:
-                    if repo['name'] == repo_name:
-                        repo_url_list.append(repo['clone_url'])
+                for repo_data in repos_data:
+                    if repo_data['name'] == repo_name:
+                        repo_url_list.append(repo_data['clone_url'])
         elif exclude:
-            for repo in repos_data:
-                if repo['name'] not in exclude:
-                    repo_url_list.append(repo['clone_url'])
+            for repo_data in repos_data:
+                if repo_data['name'] not in exclude:
+                    repo_url_list.append(repo_data['clone_url'])
         else:
-            for repo in repos_data:
-                repo_url_list.append(repo['clone_url'])
+            for repo_data in repos_data:
+                repo_url_list.append(repo_data['clone_url'])
         return repo_url_list
 
     def search(self, search_list):
@@ -170,7 +170,6 @@ class Organization(object):
             utils.print_result(self.results_file_path)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_dir)
-
 
 
 def search(
