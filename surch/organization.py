@@ -41,6 +41,11 @@ class Organization(object):
             remove_cloned_dir=False,
             results_dir=constants.RESULTS_PATH,
             **kwargs):
+        """Surch org instance define var from CLI or config file
+        """
+        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
+
+        utils.check_if_cmd_exists_else_exit('git')
         self.print_result = print_result
         self.search_list = search_list
         self.organization = organization
@@ -54,9 +59,9 @@ class Organization(object):
             lgr.warn(
                 'Choosing not to provide GitHub credentials limits '
                 'requests to GitHub to 60/h. This might affect cloning.')
-            self.creds = False
+            self.git_credentials = False
         else:
-            self.creds = (git_user, git_password)
+            self.git_credentials = (git_user, git_password)
         self.remove_cloned_dir = remove_cloned_dir
         self.results_file_path = os.path.join(
             results_dir, self.organization, 'results.json')
@@ -66,8 +71,6 @@ class Organization(object):
         self.cloned_repos_path = cloned_repos_path or os.path.join(
             self.organization, constants.CLONED_REPOS_PATH)
         self.verbose = verbose
-
-        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     @classmethod
     def init_with_config_file(cls,
@@ -85,7 +88,7 @@ class Organization(object):
 
     def _get_org_data(self):
         response = requests.get(constants.GITHUB_API_URL.format(
-            self.item_type, self.organization), auth=self.creds)
+            self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:
             lgr.error(
                 'The organization or user {0} could not be found. '
@@ -100,7 +103,7 @@ class Organization(object):
             self.organization,
             'public',
             repos_per_page,
-            page_num), auth=self.creds)
+            page_num), auth=self.git_credentials)
         return response.json()
 
     def _parse_repo_data(self, repo_data):

@@ -14,7 +14,9 @@
 #    * limitations under the License.
 
 import os
+import sys
 import shutil
+import subprocess
 from datetime import datetime
 
 import yaml
@@ -64,6 +66,16 @@ def find_string_between_strings(string, first, last):
         return string[start:end]
     except ValueError:
         return ' '
+
+
+def check_if_cmd_exists_else_exit(cmd):
+    exsits = subprocess.call("type " + cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE) == 0
+    if not exsits:
+        lgr.error('you need install git on the system.')
+        sys.exit(1)
 
 
 def handle_results_file(results_file_path, consolidate_log):

@@ -26,8 +26,6 @@ from . import logger, utils, constants
 
 lgr = logger.init()
 
-# TODO: find_executable('git')
-
 
 class Repo(object):
     def __init__(
@@ -41,10 +39,11 @@ class Repo(object):
             results_dir=constants.RESULTS_PATH,
             cloned_repo_dir=constants.CLONED_REPOS_PATH,
             **kwargs):
-        """Surch instance define var from CLI or config file
+        """Surch repo instance define var from CLI or config file
         """
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
+        utils.check_if_cmd_exists_else_exit('git')
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
