@@ -16,8 +16,8 @@
 import os
 import sys
 import shutil
-import subprocess
 from datetime import datetime
+from distutils.spawn import find_executable
 
 import yaml
 
@@ -72,11 +72,7 @@ def find_string_between_strings(string, first, last):
 
 
 def check_if_cmd_exists_else_exit(cmd):
-    exsits = subprocess.call("type " + cmd,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE) == 0
-    if not exsits:
+    if not find_executable(cmd):
         lgr.error('Git command not install in the system.'
                   ' Please install git and run again.')
         sys.exit(1)
