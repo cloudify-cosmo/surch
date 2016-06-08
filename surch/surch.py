@@ -116,7 +116,7 @@ def surch_org(organization_name, config_file, string, skip, repos, user, pager,
         search_list=list(string),
         print_result=print_result,
         organization=organization_name,
-        cloned_repos_path=cloned_repos_path)
+        cloned_repos_dir=cloned_repos_path)
 
 
 @main.command(name='user')
@@ -172,4 +172,4 @@ def surch_user(organization_name, config_file, string, skip, repos, user, pager,
         search_list=list(string),
         print_result=print_result,
         organization=organization_name,
-        cloned_repos_path=cloned_repos_path)
+        cloned_repos_dir=cloned_repos_path)
