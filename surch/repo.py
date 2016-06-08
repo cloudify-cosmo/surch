@@ -22,6 +22,7 @@ from time import time
 import retrying
 from tinydb import TinyDB
 
+from plugins import handler
 from . import logger, utils, constants
 
 lgr = logger.init()
@@ -32,7 +33,9 @@ class Repo(object):
             self,
             repo_url,
             search_list,
+            pager=None,
             verbose=False,
+            config_file=None,
             results_dir=None,
             print_result=False,
             cloned_repo_dir=None,
@@ -44,6 +47,7 @@ class Repo(object):
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         utils.check_if_cmd_exists_else_exit('git')
+        self.config_file = config_file if config_file else None
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
@@ -55,6 +59,8 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
+        self.pager = handler.plugins_handle(config_file=self.config_file,
+                                            plugins_list=pager)
         results_dir = \
             os.path.join(results_dir, 'results.json') if results_dir else None
         self.results_file_path = results_dir or os.path.join(
@@ -65,9 +71,10 @@ class Repo(object):
         self.result_count = 0
 
     @classmethod
-    def init_with_config_file(cls, config_file, print_result=False,
+    def init_with_config_file(cls, config_file, pager=None, print_result=False,
                               verbose=False):
-        conf_vars = utils.read_config_file(verbose=verbose,
+        conf_vars = utils.read_config_file(pager=pager,
+                                           verbose=verbose,
                                            config_file=config_file,
                                            print_result=print_result)
         return cls(**conf_vars)
@@ -217,11 +224,15 @@ class Repo(object):
         lgr.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         lgr.debug('Total time: {0} seconds'.format(total_time))
+        if 'slack' in self.pager:
+            handler.slack_trigger(config_file=self.config_file,
+                                  log=self.results_file_path)
 
 
 def search(
         repo_url,
         search_list,
+        pager=None,
         verbose=False,
         config_file=None,
         results_dir=None,
@@ -234,7 +245,8 @@ def search(
     utils.check_if_cmd_exists_else_exit('git')
 
     if config_file:
-        repo = Repo.init_with_config_file(verbose=verbose,
+        repo = Repo.init_with_config_file(pager=pager,
+                                          verbose=verbose,
                                           config_file=config_file,
                                           print_result=print_result)
     else:

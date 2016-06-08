@@ -26,12 +26,15 @@ from . import logger
 lgr = logger.init()
 
 
-def read_config_file(config_file, verbose=False, remove_cloned_dir=False,
+def read_config_file(config_file, pager=None, verbose=False,
+                     remove_cloned_dir=False,
                      is_organization=True, print_result=False):
     """Define vars from "config.yaml" file
     """
     with open(config_file) as config:
         conf_vars = yaml.load(config.read())
+    conf_vars.setdefault('pager', pager)
+    conf_vars.setdefault('config_file', config_file)
     conf_vars.setdefault('print_result', print_result)
     conf_vars.setdefault('verbose', verbose)
     conf_vars.setdefault('is_organization', is_organization)

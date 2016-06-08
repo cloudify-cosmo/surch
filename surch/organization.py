@@ -19,6 +19,7 @@ import logging
 
 import requests
 
+from plugins import handler
 from . import logger, repo, utils, constants
 
 lgr = logger.init()
@@ -29,9 +30,11 @@ class Organization(object):
             self,
             search_list,
             organization,
+            pager=None,
             verbose=False,
             git_user=None,
             results_dir=None,
+            config_file=None,
             git_password=None,
             print_result=False,
             repos_to_skip=None,
@@ -46,6 +49,9 @@ class Organization(object):
         lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         utils.check_if_cmd_exists_else_exit('git')
+        self.config_file = config_file if config_file else None
+        self.pager = handler.plugins_handle(config_file=self.config_file,
+                                            plugins_list=pager)
         self.print_result = print_result
         self.search_list = search_list
         self.organization = organization
@@ -77,11 +83,13 @@ class Organization(object):
     @classmethod
     def init_with_config_file(cls,
                               config_file,
+                              pager=None,
                               verbose=False,
                               print_result=False,
                               is_organization=True,
                               remove_cloned_dir=False):
-        conf_vars = utils.read_config_file(verbose=verbose,
+        conf_vars = utils.read_config_file(pager=pager,
+                                           verbose=verbose,
                                            config_file=config_file,
                                            print_result=print_result,
                                            is_organization=is_organization,
@@ -171,11 +179,15 @@ class Organization(object):
             utils.print_result_file(self.results_file_path)
         if self.remove_cloned_dir:
             utils.remove_repos_folder(path=self.cloned_repos_dir)
+        if 'slack' in self.pager:
+            handler.slack_trigger(config_file=self.config_file,
+                                  log=self.results_file_path)
 
 
 def search(
         search_list,
         organization,
+        pager=None,
         verbose=False,
         git_user=None,
         config_file=None,
@@ -190,9 +202,11 @@ def search(
         **kwargs):
 
     utils.check_if_cmd_exists_else_exit('git')
+    pager = handler.plugins_handle(config_file=config_file, plugins_list=pager)
 
     if config_file:
         org = Organization.init_with_config_file(
+            pager=pager,
             verbose=verbose,
             config_file=config_file,
             print_result=print_result,
@@ -200,6 +214,7 @@ def search(
             remove_cloned_dir=remove_cloned_dir)
     else:
         org = Organization(
+            pager=pager,
             verbose=verbose,
             git_user=git_user,
             search_list=search_list,
