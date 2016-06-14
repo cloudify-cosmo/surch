@@ -15,9 +15,7 @@
 
 import click
 
-from . import logger, repo, organization, constants
-
-lgr = logger.init()
+from . import repo, organization, constants, utils
 
 
 @click.group()
@@ -50,8 +48,6 @@ def surch_repo(repo_url, config_file, string, print_result, pager,
                remove, cloned_repo_dir, log, verbose):
     """Search a single repository
     """
-
-    logger.configure()
 
     repo.search(
         pager=pager,
@@ -100,8 +96,6 @@ def surch_org(organization_name, config_file, string, skip, repos, user, pager,
               print_result, remove, password, cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
-
-    logger.configure()
 
     organization.search(
         pager=pager,
@@ -155,8 +149,6 @@ def surch_user(organization_name, config_file, string, skip, repos, user, pager,
                verbose):
     """Search all or some repositories for a user
     """
-
-    logger.configure()
 
     organization.search(
         pager=pager,

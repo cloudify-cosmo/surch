@@ -23,9 +23,7 @@ import retrying
 from tinydb import TinyDB
 
 from plugins import handler
-from . import logger, utils, constants
-
-lgr = logger.init()
+from . import utils, constants
 
 
 class Repo(object):
@@ -44,10 +42,10 @@ class Repo(object):
             **kwargs):
         """Surch repo instance define var from CLI or config file
         """
-        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
-
         utils.check_if_cmd_exists_else_exit('git')
         self.config_file = config_file if config_file else None
+        self.logger = utils.logger
+        self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
@@ -91,32 +89,31 @@ class Repo(object):
                     command, stdout=subprocess.PIPE, shell=True)
                 proc.stdout, proc.stderr = proc.communicate()
                 if self.verbose:
-                    lgr.debug(proc.stdout)
+                    self.logger.debug(proc.stdout)
             except subprocess.CalledProcessError as git_error:
                 err = 'Failed execute {0} on repo {1} ({1})'.format(
                     command, self.repo_name, git_error)
-                lgr.error(err)
+                self.logger.error(err)
                 self.error_summary.append(err)
 
         if not os.path.isdir(self.cloned_repo_dir):
             os.makedirs(self.cloned_repo_dir)
         if os.path.isdir(self.repo_path):
-            lgr.debug('Local repo already exists at: {0}'.format(
+            self.logger.debug('Local repo already exists at: {0}'.format(
                 self.repo_path))
-            lgr.info('Pulling repo: {0}...'.format(self.repo_name))
+            self.logger.info('Pulling repo: {0}...'.format(self.repo_name))
             run('git -C {0} pull {1}'.format(self.repo_path, self.quiet_git))
         else:
-            lgr.info('Cloning repo {0} from org {1} to {2}...'.format(
+            self.logger.info('Cloning repo {0} from org {1} to {2}...'.format(
                 self.repo_name, self.organization, self.repo_path))
             run('git clone {0} {1} {2}'.format(
                 self.quiet_git, self.repo_url, self.repo_path))
 
-    @staticmethod
-    def _create_search_string(search_list):
+    def _create_search_string(self, search_list):
         """Create part of the grep command from search list.
         """
 
-        lgr.debug('Generating git grep-able search string...')
+        self.logger.debug('Generating git grep-able search string...')
         unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
         search_string = ' --or -e '.join(unglobbed_search_list)
         return search_string
@@ -127,7 +124,7 @@ class Repo(object):
         """
         search_string = self._create_search_string(list(search_list))
         matching_commits = []
-        lgr.info('Scanning repo {0} for {1} string(s)...'.format(
+        self.logger.info('Scanning repo {0} for {1} string(s)...'.format(
             self.repo_name, len(search_list)))
         for commit in commits:
             matching_commits.append(self._search_commit(commit, search_string))
@@ -136,7 +133,7 @@ class Repo(object):
     def _get_all_commits(self):
         """Get the sha (id) of the commit
         """
-        lgr.debug('Retrieving list of commits...')
+        self.logger.debug('Retrieving list of commits...')
         try:
             commits = subprocess.check_output(
                 'git -C {0} rev-list --all'.format(self.repo_path), shell=True)
@@ -162,7 +159,7 @@ class Repo(object):
             sort_keys=True,
             separators=(',', ': '))
 
-        lgr.info('Writing results to: {0}...'.format(self.results_file_path))
+        self.logger.info('Writing results to: {0}...'.format(self.results_file_path))
         for matched_files in results:
             for match in matched_files:
                 try:
@@ -206,7 +203,7 @@ class Repo(object):
     def search(self, search_list):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
-            lgr.error('You must supply at least one string to search for.')
+            self.logger.error('You must supply at least one string to search for.')
             sys.exit(1)
 
         start = time()
@@ -220,10 +217,10 @@ class Repo(object):
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
-            utils.print_results_summary(self.error_summary, lgr)
-        lgr.info('Found {0} results in {1} commits.'.format(
+            utils.print_results_summary(self.error_summary, self.logger)
+        self.logger.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
-        lgr.debug('Total time: {0} seconds'.format(total_time))
+        self.logger.debug('Total time: {0} seconds'.format(total_time))
         if 'pagerduty' in self.pager:
             handler.pagerduty_trigger(config_file=self.config_file,
                                       log=self.results_file_path)

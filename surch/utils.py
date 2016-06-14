@@ -16,19 +16,33 @@
 import os
 import sys
 import shutil
+import logging
+
 from datetime import datetime
 from distutils.spawn import find_executable
 
 import yaml
 
-from . import logger
 
-lgr = logger.init()
+def setup_logger():
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger = logging.getLogger('surch')
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    return logger
+
+logger = setup_logger()
 
 
-def read_config_file(config_file, pager=None, verbose=False,
-                     remove_cloned_dir=False,
-                     is_organization=True, print_result=False):
+def read_config_file(config_file,
+                     pager=None,
+                     verbose=False,
+                     print_result=False,
+                     is_organization=True,
+                     remove_cloned_dir=False):
     """Define vars from "config.yaml" file
     """
     with open(config_file) as config:
@@ -43,19 +57,19 @@ def read_config_file(config_file, pager=None, verbose=False,
 
 
 def remove_repos_folder(path=None):
-    lgr.info('Removing: {0}...'.format(path))
+    logger.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 
 
-def print_results_summary(error_summary, lgr):
-    lgr.info('Summary of all errors: \n{0}'.format(
+def print_results_summary(error_summary, logger):
+    logger.info('Summary of all errors: \n{0}'.format(
         '\n'.join(error_summary)))
 
 
 def print_result_file(result_file=None):
     with open(result_file) as results_file:
         results = results_file.read()
-    lgr.info(results)
+    logger.info(results)
 
 
 def convert_to_seconds(start, end):
@@ -73,12 +87,13 @@ def find_string_between_strings(string, first, last):
 
 def check_if_cmd_exists_else_exit(cmd):
     if not find_executable(cmd):
-        lgr.error('Git command not install in the system.'
+        logger.error('Git command not install in the system.'
                   ' Please install git and run again.')
         sys.exit(1)
 
 
-def handle_results_file(results_file_path, consolidate_log):
+def handle_results_file(results_file_path,
+                        consolidate_log):
     dirname = os.path.dirname(results_file_path)
     if not os.path.isdir(os.path.dirname(results_file_path)):
         os.makedirs(dirname)
@@ -86,7 +101,7 @@ def handle_results_file(results_file_path, consolidate_log):
         if not consolidate_log:
             timestamp = str(datetime.now().strftime('%Y%m%dT%H%M%S'))
             new_log_file = results_file_path + '.' + timestamp
-            lgr.info(
+            logger.info(
                 'Previous results file found. Backing up '
                 'to {0}'.format(new_log_file))
             shutil.move(results_file_path, new_log_file)

@@ -20,9 +20,8 @@ import logging
 import requests
 
 from plugins import handler
-from . import logger, repo, utils, constants
+from . import repo, utils, constants
 
-lgr = logger.init()
 
 
 class Organization(object):
@@ -46,23 +45,25 @@ class Organization(object):
             **kwargs):
         """Surch org instance define var from CLI or config file
         """
-        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
-
         utils.check_if_cmd_exists_else_exit('git')
         self.config_file = config_file if config_file else None
         self.pager = handler.plugins_handle(config_file=self.config_file,
                                             plugins_list=pager)
+
+        self.logger = utils.logger
+        self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.print_result = print_result
         self.search_list = search_list
         self.organization = organization
         self.results_dir = results_dir
         if repos_to_skip and repos_to_check:
-            lgr.warn('You can not both include and exclude repositories.')
+            self.logger.warn(
+                'You can not both include and exclude repositories.')
             sys.exit(1)
         self.repos_to_skip = repos_to_skip
         self.repos_to_check = repos_to_check
         if not git_user or not git_password:
-            lgr.warn(
+            self.logger.warn(
                 'Choosing not to provide GitHub credentials limits '
                 'requests to GitHub to 60/h. This might affect cloning.')
             self.git_credentials = False
@@ -100,7 +101,7 @@ class Organization(object):
         response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:
-            lgr.error(
+            self.logger.error(
                 'The organization or user {0} could not be found. '
                 'Please make sure you use the correct type (org/user).'.format(
                     self.organization))
@@ -121,7 +122,7 @@ class Organization(object):
                 for data in repo_data]
 
     def _get_repos_data(self, repos_per_page=100):
-        lgr.info('Retrieving repository information for the {0}...'.format(
+        self.logger.info('Retrieving repository information for the {0}...'.format(
             'organization' if self.is_organization else 'user'))
         org_data = self._get_org_data()
         repo_count = org_data['public_repos']
@@ -155,7 +156,8 @@ class Organization(object):
     def search(self, search_list):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
-            lgr.error('You must supply at least one string to search for.')
+            self.logger.error(
+                'You must supply at least one string to search for.')
             sys.exit(1)
         repos_data = self._get_repos_data()
         if not os.path.isdir(self.cloned_repos_dir):
