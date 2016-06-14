@@ -58,6 +58,7 @@ class Organization(object):
         :param remove_cloned_dir:
                         this flag for removing the clone directory (boolean)
         """
+
         utils.check_if_executable_exists_else_exit('git')
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -76,6 +77,9 @@ class Organization(object):
         self.config_file = config_file if config_file else None
         self.pager = handler.plugins_handle(config_file=self.config_file,
                                             plugins_list=pager)
+
+        self.logger = utils.logger
+        self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.print_result = print_result
         self.organization = organization
         self.results_dir = results_dir
@@ -149,6 +153,7 @@ class Organization(object):
             'Retrieving repository information for this {0}{1}...'.format(
                 'organization:' if self.is_organization else 'user:',
                 self.organization))
+
         org_data = self._get_org_data()
         repo_count = org_data['public_repos']
         last_page_number = repo_count / repos_per_page

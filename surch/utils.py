@@ -23,6 +23,7 @@ from distutils.spawn import find_executable
 
 import yaml
 
+<<<<<<< c014d34bc422f8dbed725781461276a31738a113
 
 def setup_logger():
     """Define logger level
@@ -37,7 +38,6 @@ def setup_logger():
     return logger
 
 logger = setup_logger()
-
 
 def read_config_file(config_file,
                      pager=None,
@@ -60,6 +60,7 @@ def read_config_file(config_file,
 
 def remove_repos_folder(path=None):
     """print log and removing directory"""
+
     logger.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 

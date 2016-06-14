@@ -58,7 +58,10 @@ class Repo(object):
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+
         self.config_file = config_file if config_file else None
+        self.logger = utils.logger
+        self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.print_result = print_result
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
@@ -181,6 +184,7 @@ class Repo(object):
 
         self.logger.info('Writing results to: {0}...'.format(
             self.results_file_path))
+
         for matched_files in results:
             for match in matched_files:
                 try:
@@ -245,6 +249,7 @@ class Repo(object):
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_errors_summary(self.error_summary)
+
         self.logger.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         self.logger.debug('Total time: {0} seconds'.format(total_time))
