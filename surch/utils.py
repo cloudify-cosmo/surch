@@ -23,7 +23,6 @@ from distutils.spawn import find_executable
 
 import yaml
 
-<<<<<<< c014d34bc422f8dbed725781461276a31738a113
 
 def setup_logger():
     """Define logger level

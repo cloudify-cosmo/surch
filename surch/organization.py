@@ -153,7 +153,6 @@ class Organization(object):
             'Retrieving repository information for this {0}{1}...'.format(
                 'organization:' if self.is_organization else 'user:',
                 self.organization))
-
         org_data = self._get_org_data()
         repo_count = org_data['public_repos']
         last_page_number = repo_count / repos_per_page

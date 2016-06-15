@@ -184,7 +184,6 @@ class Repo(object):
 
         self.logger.info('Writing results to: {0}...'.format(
             self.results_file_path))
-
         for matched_files in results:
             for match in matched_files:
                 try:
