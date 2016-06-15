@@ -122,8 +122,9 @@ class Organization(object):
                 for data in repo_data]
 
     def _get_repos_data(self, repos_per_page=100):
-        self.logger.info('Retrieving repository information for the {0}...'.format(
-            'organization' if self.is_organization else 'user'))
+        self.logger.info(
+            'Retrieving repository information for the {0}...'.format(
+                'organization' if self.is_organization else 'user'))
         org_data = self._get_org_data()
         repo_count = org_data['public_repos']
         last_page_number = repo_count / repos_per_page

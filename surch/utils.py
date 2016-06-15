@@ -87,8 +87,8 @@ def find_string_between_strings(string, first, last):
 
 def check_if_cmd_exists_else_exit(cmd):
     if not find_executable(cmd):
-        logger.error('Git command not install in the system.'
-                  ' Please install git and run again.')
+        logger.error('Git command not install in the system. '
+                     'Please install git and run again.')
         sys.exit(1)
 
 
