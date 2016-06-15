@@ -50,7 +50,8 @@ class Organization(object):
         self.organization = organization
         self.results_dir = results_dir
         if repos_to_skip and repos_to_check:
-            self.logger.warn('You can not both include and exclude repositories.')
+            self.logger.warn(
+                'You can not both include and exclude repositories.')
             sys.exit(1)
         self.repos_to_skip = repos_to_skip
         self.repos_to_check = repos_to_check
@@ -112,8 +113,9 @@ class Organization(object):
                 for data in repo_data]
 
     def _get_repos_data(self, repos_per_page=100):
-        self.logger.info('Retrieving repository information for the {0}...'.format(
-            'organization' if self.is_organization else 'user'))
+        self.logger.info(
+            'Retrieving repository information for the {0}...'.format(
+                'organization' if self.is_organization else 'user'))
         org_data = self._get_org_data()
         repo_count = org_data['public_repos']
         last_page_number = repo_count / repos_per_page
@@ -146,7 +148,8 @@ class Organization(object):
     def search(self, search_list):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
-            self.logger.error('You must supply at least one string to search for.')
+            self.logger.error(
+                'You must supply at least one string to search for.')
             sys.exit(1)
         repos_data = self._get_repos_data()
         if not os.path.isdir(self.cloned_repos_dir):

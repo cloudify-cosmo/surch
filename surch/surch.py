@@ -15,7 +15,7 @@
 
 import click
 
-from . import repo, organization, constants, utils
+from . import repo, organization, constants
 
 
 @click.group()

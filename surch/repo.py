@@ -153,7 +153,8 @@ class Repo(object):
             sort_keys=True,
             separators=(',', ': '))
 
-        self.logger.info('Writing results to: {0}...'.format(self.results_file_path))
+        self.logger.info('Writing results to: {0}...'.format(
+            self.results_file_path))
         for matched_files in results:
             for match in matched_files:
                 try:
@@ -197,7 +198,8 @@ class Repo(object):
     def search(self, search_list):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
-            self.logger.error('You must supply at least one string to search for.')
+            self.logger.error(
+                'You must supply at least one string to search for.')
             sys.exit(1)
 
         start = time()
