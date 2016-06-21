@@ -101,6 +101,8 @@ class Organization(object):
                               print_result=False,
                               is_organization=True,
                               remove_cloned_dir=False):
+        """Init org instance from config file
+        """
         conf_vars = utils.read_config_file(pager=pager,
                                            verbose=verbose,
                                            config_file=config_file,
@@ -110,6 +112,9 @@ class Organization(object):
         return cls(**conf_vars)
 
     def _get_org_data(self):
+        """Getting the organization data from git api,
+            if user/org not found exit from program.
+        """
         response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:
@@ -121,6 +126,7 @@ class Organization(object):
         return response.json()
 
     def get_repos_list_per_page(self, repos_per_page, page_num):
+
         """Getting repository data from git api per api page
         """
         try:
@@ -190,7 +196,6 @@ class Organization(object):
     def search(self, search_list=None):
         """This method search the string on the organization/user
         """
-        
         search_list = search_list or []
         if len(search_list) == 0:
             self.logger.error(
@@ -241,6 +246,8 @@ def search(
         cloned_repos_dir=None,
         remove_cloned_dir=False,
         **kwargs):
+    """Api method init organization instance and search strings
+    """
 
     """Api method init organization instance and search strings
     """
