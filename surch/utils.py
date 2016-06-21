@@ -25,6 +25,8 @@ import yaml
 
 
 def setup_logger():
+    """Define logger level
+    """
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -57,6 +59,7 @@ def read_config_file(config_file,
 
 
 def remove_repos_folder(path=None):
+    """print log and removing directory"""
     logger.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 

@@ -40,8 +40,20 @@ class Repo(object):
             consolidate_log=False,
             remove_cloned_dir=False,
             **kwargs):
-        """Surch repo instance define var from CLI or config file
+        """Surch repo instance init
+
+        :param repo_url: get http / ssh repository for cloning (string)
+        :param search_list: list of string we want to search (list)
+        :param verbose: log level (boolean)
+        :param results_dir: path to result file (string)
+        :param print_result: this flag print result file in the end (boolean)
+        :param cloned_repo_dir: path for cloned repo (string)
+        :param consolidate_log:
+                        this flag decide if save the old result file (boolean)
+        :param remove_cloned_dir:
+                        this flag for removing the clone directory (boolean)
         """
+
         utils.check_if_executable_exists_else_exit('git')
         self.config_file = config_file if config_file else None
 
@@ -72,6 +84,8 @@ class Repo(object):
     @classmethod
     def init_with_config_file(cls, config_file, pager=None, print_result=False,
                               verbose=False):
+        """Init repo instance from config file
+        """
         conf_vars = utils.read_config_file(pager=pager,
                                            verbose=verbose,
                                            config_file=config_file,
@@ -80,7 +94,7 @@ class Repo(object):
 
     @retrying.retry(stop_max_attempt_number=3)
     def _clone_or_pull(self):
-        """Clone the repo if it doesn't exist in the local path.
+        """Clone the repo if it doesn't exist in the cloned_repo_dir.
         Otherwise, pull it.
         """
 
@@ -145,6 +159,8 @@ class Repo(object):
             return []
 
     def _search_commit(self, commit, search_string):
+        """ Run git grep on the commit
+        """
         try:
             matched_files = subprocess.check_output(
                 'git -C {0} grep -l -e {1} {2}'.format(
@@ -154,6 +170,8 @@ class Repo(object):
             return []
 
     def _write_results(self, results):
+        """ Write the result to DB
+        """
         db = TinyDB(
             self.results_file_path,
             indent=4,
@@ -194,6 +212,9 @@ class Repo(object):
                     pass
 
     def _get_user_details(self, sha):
+        """ Return user_name, user_email, commit_time
+        per commit before write to DB
+        """
         details = subprocess.check_output(
             "git -C {0} show -s  {1}".format(self.repo_path, sha), shell=True)
         name = utils.find_string_between_strings(details, 'Author: ', ' <')
@@ -203,6 +224,8 @@ class Repo(object):
         return name, email, commit_time
 
     def search(self, search_list):
+        """Api method init repo instance and search strings
+        """
         search_list = search_list or self.search_list
         if len(search_list) == 0:
             self.logger.error(
@@ -241,6 +264,8 @@ def search(
         consolidate_log=False,
         remove_cloned_dir=False,
         **kwargs):
+    """Api method init repo instance and search strings
+    """
 
     utils.check_if_executable_exists_else_exit('git')
 

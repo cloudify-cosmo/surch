@@ -69,10 +69,10 @@ def surch_repo(repo_url, config_file, string, print_result, pager,
 @click.option('-s', '--string', multiple=True,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
-@click.option('--skip', default='', multiple=True,
+@click.option('--exclude-repo', default='', multiple=True,
               help='Repo you would like to skip. '
               'This can be passed multiple times.')
-@click.option('--repos', default='', multiple=True,
+@click.option('--include-repo', default='', multiple=True,
               help='Repo you would like to include. '
               'This can be passed multiple times.')
 @click.option('-U', '--user', default=None,
@@ -92,8 +92,9 @@ def surch_repo(repo_url, config_file, string, print_result, pager,
               help='pager plugins(pagerduty).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_org(organization_name, config_file, string, skip, repos, user, pager,
-              print_result, remove, password, cloned_repos_path, log, verbose):
+def surch_org(organization_name, config_file, string, include_repo, pager,
+              exclude_repo, user, print_result, remove, password,
+              cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
 
@@ -102,8 +103,8 @@ def surch_org(organization_name, config_file, string, skip, repos, user, pager,
         git_user=user,
         results_dir=log,
         verbose=verbose,
-        repos_to_skip=skip,
-        repos_to_check=repos,
+        repos_to_skip=exclude_repo,
+        repos_to_check=include_repo,
         git_password=password,
         config_file=config_file,
         remove_cloned_dir=remove,
@@ -121,10 +122,10 @@ def surch_org(organization_name, config_file, string, skip, repos, user, pager,
 @click.option('-s', '--string', multiple=True, required=False,
               help='String you would like to search for. '
               'This can be passed multiple times.')
-@click.option('--skip', default='', multiple=True,
+@click.option('--exclude-repo', default='', multiple=True,
               help='Repo you would like to skip. '
               'This can be passed multiple times.')
-@click.option('--repos', default='', multiple=True,
+@click.option('--include-repo', default='', multiple=True,
               help='Repo you would like to include. '
               'This can be passed multiple times.')
 @click.option('-U', '--user', default=None,
@@ -144,9 +145,9 @@ def surch_org(organization_name, config_file, string, skip, repos, user, pager,
               help='pager plugins(pagerduty).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_user(organization_name, config_file, string, skip, repos, user, pager,
-               remove, password, cloned_repos_path, log, print_result,
-               verbose):
+def surch_user(organization_name, config_file, string, include_repo, pager,
+               exclude_repo, user, remove, password, cloned_repos_path, log,
+               print_result, verbose):
     """Search all or some repositories for a user
     """
 
@@ -155,8 +156,8 @@ def surch_user(organization_name, config_file, string, skip, repos, user, pager,
         git_user=user,
         results_dir=log,
         verbose=verbose,
-        repos_to_skip=skip,
-        repos_to_check=repos,
+        repos_to_skip=exclude_repo,
+        repos_to_check=include_repo,
         is_organization=False,
         git_password=password,
         config_file=config_file,

@@ -42,7 +42,23 @@ class Organization(object):
             cloned_repos_dir=None,
             remove_cloned_dir=False,
             **kwargs):
-        """Surch org instance define var from CLI or config file
+
+        """Surch org instance init
+
+        :param organization: organization name (string)
+        :param git_user: user name for authentication (string)
+        :param git_password: user password /api key for authentication (string)
+        :param repos_to_skip: exclude repos (list)
+        :param repos_to_check: include repos (list)
+        :param is_organization: this flag for api (boolean)
+        :param verbose: log level (boolean)
+        :param results_dir: path to result file (string)
+        :param print_result: this flag print result file in the end (boolean)
+        :param consolidate_log:
+                        this flag decide if save the old result file (boolean)
+        :param cloned_repos_dir: path for cloned repo (string)
+        :param remove_cloned_dir:
+                        this flag for removing the clone directory (boolean)
         """
         utils.check_if_executable_exists_else_exit('git')
         self.config_file = config_file if config_file else None
@@ -52,7 +68,7 @@ class Organization(object):
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if repos_to_skip and repos_to_check:
             self.logger.warn(
-                'You can not both include and exclude repositories.')
+                'You can\'t both include and exclude repositories.')
             sys.exit(1)
         if not git_user or not git_password:
             self.logger.warn(
@@ -87,6 +103,8 @@ class Organization(object):
                               print_result=False,
                               is_organization=True,
                               remove_cloned_dir=False):
+        """Init org instance from config file
+        """
         conf_vars = utils.read_config_file(pager=pager,
                                            verbose=verbose,
                                            config_file=config_file,
@@ -96,6 +114,9 @@ class Organization(object):
         return cls(**conf_vars)
 
     def _get_org_data(self):
+        """Getting the organization data from git api,
+            if user/org not found exit from program.
+        """
         response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:
@@ -107,6 +128,8 @@ class Organization(object):
         return response.json()
 
     def _get_repos_list(self, repos_per_page, page_num):
+        """Getting repository data from git api per api page
+        """
         try:
             response = requests.get(constants.GITHUB_REPO_DETAILS_API_URL.format(
                 self.item_type,
@@ -120,10 +143,15 @@ class Organization(object):
             sys.exit(1)
 
     def _parse_repo_data(self, repo_data):
+        """Return only name and clone_url from all repo list of dicts
+        """
         return [dict((key, data[key]) for key in ['name', 'clone_url'])
                 for data in repo_data]
 
     def _get_repos_data(self, repos_per_page=100):
+        """use in '_get_repos_list' method to get all repositories
+        organization/user data
+        """
         self.logger.info(
             'Retrieving repository information for this {0}{1}...'.format(
                 'organization:' if self.is_organization else 'user:',
@@ -145,10 +173,12 @@ class Organization(object):
                               all_repos,
                               repos_to_include=None,
                               repos_to_exclude=None):
-        # if repos_to_exclude and repos_to_include:
-        #     self.logger.error(
-        #         'You can not both include and exclude repositories.')
-        #     sys.exit(1)
+        """ Get include or exclude repositories list ,
+        return repositories list to search on"""
+        if repos_to_exclude and repos_to_include:
+            self.logger.error(
+                'You can not both include and exclude repositories.')
+            sys.exit(1)
         repo_url_list = []
         if repos_to_include:
             for repo_name in repos_to_include:
@@ -165,6 +195,8 @@ class Organization(object):
         return repo_url_list
 
     def search(self, search_list=None):
+        """This method search the string on the organization/user
+        """
         search_list = search_list or []
         if len(search_list) == 0:
             self.logger.error(
@@ -215,6 +247,8 @@ def search(
         cloned_repos_dir=None,
         remove_cloned_dir=False,
         **kwargs):
+    """Api method init organization instance and search strings
+    """
 
     utils.check_if_executable_exists_else_exit('git')
     pager = handler.plugins_handle(config_file=config_file, plugins_list=pager)
