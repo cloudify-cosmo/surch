@@ -30,7 +30,6 @@ class Organization(object):
             config_file=None,
             git_user=None,
             git_password=None,
-            config_file=None,
             repos_to_skip=None,
             repos_to_check=None,
             is_organization=True,
