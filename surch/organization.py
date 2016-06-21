@@ -250,8 +250,6 @@ def search(
     """Api method init organization instance and search strings
     """
 
-    """Api method init organization instance and search strings
-    """
     utils.check_if_executable_exists_else_exit('git')
     pager = handler.plugins_handle(config_file=config_file, plugins_list=pager)
 

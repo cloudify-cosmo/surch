@@ -54,9 +54,6 @@ class Repo(object):
                         this flag for removing the clone directory (boolean)
         """
         utils.check_if_executable_exists_else_exit('git')
-
-        self.logger = utils.logger
-        self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.config_file = config_file if config_file else None
 
         self.logger = utils.logger
