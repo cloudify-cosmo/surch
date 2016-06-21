@@ -27,18 +27,17 @@ from . import repo, utils, constants
 class Organization(object):
     def __init__(
             self,
-            search_list,
             organization,
-            pager=None,
-            verbose=False,
-            git_user=None,
             config_file=None,
-            results_dir=None,
+            git_user=None,
             git_password=None,
-            print_result=False,
             repos_to_skip=None,
             repos_to_check=None,
             is_organization=True,
+            pager=None,
+            verbose=False,
+            results_dir=None,
+            print_result=False,
             consolidate_log=False,
             cloned_repos_dir=None,
             remove_cloned_dir=False,
@@ -49,19 +48,12 @@ class Organization(object):
         self.config_file = config_file if config_file else None
         self.pager = handler.plugins_handle(config_file=self.config_file,
                                             plugins_list=pager)
-
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-        self.print_result = print_result
-        self.search_list = search_list
-        self.organization = organization
-        self.results_dir = results_dir
         if repos_to_skip and repos_to_check:
             self.logger.warn(
                 'You can not both include and exclude repositories.')
             sys.exit(1)
-        self.repos_to_skip = repos_to_skip
-        self.repos_to_check = repos_to_check
         if not git_user or not git_password:
             self.logger.warn(
                 'Choosing not to provide GitHub credentials limits '
@@ -69,6 +61,12 @@ class Organization(object):
             self.git_credentials = False
         else:
             self.git_credentials = (git_user, git_password)
+
+        self.print_result = print_result
+        self.organization = organization
+        self.results_dir = results_dir
+        self.repos_to_skip = repos_to_skip
+        self.repos_to_check = repos_to_check
         self.remove_cloned_dir = remove_cloned_dir
         results_dir = \
             os.path.join(results_dir, 'results.json') if results_dir else None
@@ -109,13 +107,17 @@ class Organization(object):
         return response.json()
 
     def _get_repos_list(self, repos_per_page, page_num):
-        response = requests.get(constants.REPO_DETAILS_API_URL.format(
-            self.item_type,
-            self.organization,
-            'public',
-            repos_per_page,
-            page_num), auth=self.git_credentials)
-        return response.json()
+        try:
+            response = requests.get(constants.GITHUB_REPO_DETAILS_API_URL.format(
+                self.item_type,
+                self.organization,
+                'public',
+                repos_per_page,
+                page_num), auth=self.git_credentials)
+            return response.json()
+        except (requests.ConnectionError, requests.Timeout) as error:
+            self.logger.error(error)
+            sys.exit(1)
 
     def _parse_repo_data(self, repo_data):
         return [dict((key, data[key]) for key in ['name', 'clone_url'])
@@ -123,8 +125,9 @@ class Organization(object):
 
     def _get_repos_data(self, repos_per_page=100):
         self.logger.info(
-            'Retrieving repository information for the {0}...'.format(
-                'organization' if self.is_organization else 'user'))
+            'Retrieving repository information for this {0}{1}...'.format(
+                'organization:' if self.is_organization else 'user:',
+                self.organization))
         org_data = self._get_org_data()
         repo_count = org_data['public_repos']
         last_page_number = repo_count / repos_per_page
@@ -133,29 +136,36 @@ class Organization(object):
             #  and 1 for the next for loop.
             last_page_number += 2
             repos_data = []
-            for page_num in range(1, last_page_number):
+            for page_num in xrange(1, last_page_number):
                 repo_data = self._get_repos_list(repos_per_page, page_num)
                 repos_data.extend(self._parse_repo_data(repo_data))
             return repos_data
 
-    def get_include_list(self, repos_data, include=None, exclude=None):
+    def get_repo_include_list(self,
+                              all_repos,
+                              repos_to_include=None,
+                              repos_to_exclude=None):
+        # if repos_to_exclude and repos_to_include:
+        #     self.logger.error(
+        #         'You can not both include and exclude repositories.')
+        #     sys.exit(1)
         repo_url_list = []
-        if include:
-            for repo_name in include:
-                for repo_data in repos_data:
+        if repos_to_include:
+            for repo_name in repos_to_include:
+                for repo_data in all_repos:
                     if repo_data['name'] == repo_name:
                         repo_url_list.append(repo_data['clone_url'])
-        elif exclude:
-            for repo_data in repos_data:
-                if repo_data['name'] not in exclude:
+        elif repos_to_exclude:
+            for repo_data in all_repos:
+                if repo_data['name'] not in repos_to_exclude:
                     repo_url_list.append(repo_data['clone_url'])
         else:
-            for repo_data in repos_data:
+            for repo_data in all_repos:
                 repo_url_list.append(repo_data['clone_url'])
         return repo_url_list
 
-    def search(self, search_list):
-        search_list = search_list or self.search_list
+    def search(self, search_list=None):
+        search_list = search_list or []
         if len(search_list) == 0:
             self.logger.error(
                 'You must supply at least one string to search for.')
@@ -165,9 +175,11 @@ class Organization(object):
             os.makedirs(self.cloned_repos_dir)
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
 
-        repos_url_list = self.get_include_list(repos_data=repos_data,
-                                               exclude=self.repos_to_skip,
-                                               include=self.repos_to_check)
+        repos_url_list = self.get_repo_include_list(
+            all_repos=repos_data,
+            repos_to_include=self.repos_to_check,
+            repos_to_exclude=self.repos_to_skip)
+
         for repo_data in repos_url_list:
             repo.search(
                 print_result=False,
@@ -215,12 +227,17 @@ def search(
             print_result=print_result,
             is_organization=is_organization,
             remove_cloned_dir=remove_cloned_dir)
+        conf_vars = utils.read_config_file(verbose=verbose,
+                                           config_file=config_file,
+                                           print_result=print_result,
+                                           is_organization=is_organization,
+                                           remove_cloned_dir=remove_cloned_dir)
+        search_list = conf_vars['search_list']
     else:
         org = Organization(
             pager=pager,
             verbose=verbose,
             git_user=git_user,
-            search_list=search_list,
             results_dir=results_dir,
             git_password=git_password,
             organization=organization,
