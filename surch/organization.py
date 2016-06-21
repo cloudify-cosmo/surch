@@ -114,7 +114,7 @@ class Organization(object):
             sys.exit(1)
         return response.json()
 
-    def _get_repos_list(self, repos_per_page, page_num):
+    def get_repos_list_per_page(self, repos_per_page, page_num):
         """Getting repository data from git api per api page
         """
         try:
@@ -135,8 +135,8 @@ class Organization(object):
         return [dict((key, data[key]) for key in ['name', 'clone_url'])
                 for data in repo_data]
 
-    def _get_repos_data(self, repos_per_page=100):
-        """use in '_get_repos_list' method to get all repositories
+    def _get_all_repos_list(self, repos_per_page=100):
+        """use in 'get_repos_list_per_page' method to get all repositories
         organization/user data
         """
         self.logger.info(
@@ -152,7 +152,7 @@ class Organization(object):
             last_page_number += 2
             repos_data = []
             for page_num in xrange(1, last_page_number):
-                repo_data = self._get_repos_list(repos_per_page, page_num)
+                repo_data = self.get_repos_list_per_page(repos_per_page, page_num)
                 repos_data.extend(self._parse_repo_data(repo_data))
             return repos_data
 
@@ -189,7 +189,7 @@ class Organization(object):
             self.logger.error(
                 'You must supply at least one string to search for.')
             sys.exit(1)
-        repos_data = self._get_repos_data()
+        repos_data = self._get_all_repos_list()
         if not os.path.isdir(self.cloned_repos_dir):
             os.makedirs(self.cloned_repos_dir)
         utils.handle_results_file(self.results_file_path, self.consolidate_log)
