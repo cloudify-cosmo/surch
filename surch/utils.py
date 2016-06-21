@@ -61,7 +61,7 @@ def remove_repos_folder(path=None):
     shutil.rmtree(path)
 
 
-def print_results_summary(error_summary, logger):
+def print_errors_summary(error_summary):
     logger.info('Summary of all errors: \n{0}'.format(
         '\n'.join(error_summary)))
 
@@ -85,10 +85,9 @@ def find_string_between_strings(string, first, last):
         return ' '
 
 
-def check_if_cmd_exists_else_exit(cmd):
-    if not find_executable(cmd):
-        logger.error('Git command not install in the system. '
-                     'Please install git and run again.')
+def check_if_executable_exists_else_exit(executable):
+    if not find_executable(executable):
+        logger.error('{0} executable not found and is required'.format(executable))
         sys.exit(1)
 
 
