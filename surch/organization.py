@@ -112,9 +112,6 @@ class Organization(object):
         return cls(**conf_vars)
 
     def _get_org_data(self):
-        """Getting the organization data from git api,
-            if user/org not found exit from program.
-        """
         response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:
