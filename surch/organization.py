@@ -19,199 +19,247 @@ import logging
 
 import requests
 
-from . import logger, repo, utils, constants
-
-REPO_DETAILS_API_URL = \
-    'https://api.github.com/{0}/{1}/repos?type={2}&per_page={3}&page={4}'
-ORG_DETAILS_API_URL = 'https://api.github.com/{0}/{1}'
-
-
-lgr = logger.init()
+from . import repo, utils, constants
 
 
 class Organization(object):
     def __init__(
             self,
-            search_list,
             organization,
-            git_user,
-            git_password,
-            print_result=False,
-            organization_flag=True,
+            git_user=None,
+            git_password=None,
             repos_to_skip=None,
             repos_to_check=None,
-            consolidate_log=False,
-            cloned_repos_path=constants.CLONED_REPOS_PATH,
-            results_dir=constants.RESULTS_PATH,
+            is_organization=True,
             verbose=False,
+            results_dir=None,
+            print_result=False,
+            consolidate_log=False,
+            cloned_repos_dir=None,
             remove_cloned_dir=False,
             **kwargs):
-        """Surch instance define var from CLI or config file
+
+        """Surch org instance init
+
+        :param organization: organization name (string)
+        :param git_user: user name for authentication (string)
+        :param git_password:
+                        user password  or api key for authentication (string)
+        :param repos_to_skip: exclude repos (list)
+        :param repos_to_check: include repos (list)
+        :param is_organization: this flag for api (boolean)
+        :param verbose: log level (boolean)
+        :param results_dir: path to result file (string)
+        :param print_result: this flag print result file in the end (boolean)
+        :param consolidate_log:
+                        this flag decide if save the old result file (boolean)
+        :param cloned_repos_dir: path for cloned repo (string)
+        :param remove_cloned_dir:
+                        this flag for removing the clone directory (boolean)
         """
-        self.print_result = print_result
-        self.search_list = search_list
-        self.organization = organization
-        self.results_dir = results_dir
+        utils.check_if_executable_exists_else_exit('git')
+        self.logger = utils.logger
+        self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if repos_to_skip and repos_to_check:
-            lgr.warn("Can't run surch with list of exclude and includes repo ")
+            self.logger.warn(
+                'You can\'t both include and exclude repositories.')
             sys.exit(1)
-        self.repos_to_skip = repos_to_skip or []
-        self.repos_to_check = repos_to_check or []
         if not git_user or not git_password:
-            lgr.warn(
+            self.logger.warn(
                 'Choosing not to provide GitHub credentials limits '
                 'requests to GitHub to 60/h. This might affect cloning.')
-            self.auth = False
+            self.git_credentials = False
         else:
-            self.auth = True
-            self.git_user = git_user
-            self.git_password = git_password
+            self.git_credentials = (git_user, git_password)
+
+        self.print_result = print_result
+        self.organization = organization
+        self.results_dir = results_dir
+        self.repos_to_skip = repos_to_skip
+        self.repos_to_check = repos_to_check
         self.remove_cloned_dir = remove_cloned_dir
-        self.repository_data = []
-        if not os.path.isdir(cloned_repos_path):
-            os.makedirs(cloned_repos_path)
-        self.results_file_path = os.path.join(
-            results_dir, self.organization, 'results.json')
-        utils.handle_results_file(self.results_file_path, consolidate_log)
-        self.item_type = 'orgs' if organization_flag else 'users'
-        self.object_type = 'organization' if organization_flag else 'user'
-        self.cloned_repos_path = cloned_repos_path
+        results_dir = \
+            os.path.join(results_dir, 'results.json') if results_dir else None
+        self.results_file_path = results_dir or os.path.join(
+            constants.RESULTS_PATH, self.organization, 'results.json')
+        self.consolidate_log = consolidate_log
+        self.is_organization = is_organization
+        self.item_type = 'orgs' if is_organization else 'users'
+        self.cloned_repos_dir = cloned_repos_dir or os.path.join(
+            self.organization, constants.CLONED_REPOS_PATH)
         self.verbose = verbose
 
-        lgr.setLevel(logging.DEBUG if verbose else logging.INFO)
-
     @classmethod
-    def init_with_config_file(cls, config_file, verbose=False,
+    def init_with_config_file(cls,
+                              config_file,
+                              verbose=False,
                               print_result=False,
-                              remove_cloned_dir=False,
-                              organization_flag=True):
-        conf_vars = utils.read_config_file(
-            config_file=config_file,
-            print_result=print_result,
-            verbose=verbose,
-            remove_cloned_dir=remove_cloned_dir,
-            organization_flag=organization_flag)
+                              is_organization=True,
+                              remove_cloned_dir=False):
+        conf_vars = utils.read_config_file(verbose=verbose,
+                                           config_file=config_file,
+                                           print_result=print_result,
+                                           is_organization=is_organization,
+                                           remove_cloned_dir=remove_cloned_dir)
         return cls(**conf_vars)
 
-    def get_github_repo_list(
-            self,
-            url_type='clone_url',
-            repository_type='public',
-            repository_per_page=100):
-        """This method get from GitHub the git url list for cloning
-        """
-        lgr.info(
-            'Retrieving list of repositories for the {0}...'.format(
-                self.object_type))
-        auth = (self.git_user, self.git_password) if self.auth else False
-        repository_data = \
-            requests.get(
-                ORG_DETAILS_API_URL.format(
-                    self.item_type, self.organization), auth=auth)
-        if repository_data.status_code == requests.codes.NOT_FOUND:
-            lgr.error(
+    def _get_org_data(self):
+        response = requests.get(constants.GITHUB_API_URL.format(
+            self.item_type, self.organization), auth=self.git_credentials)
+        if response.status_code == requests.codes.NOT_FOUND:
+            self.logger.error(
                 'The organization or user {0} could not be found. '
                 'Please make sure you use the correct type (org/user).'.format(
                     self.organization))
             sys.exit(1)
-        repository_number = \
-            repository_data.json()['{0}_repos'.format(repository_type)]
-        last_page_number = repository_number / repository_per_page
-        if (repository_number % repository_per_page) > 0:
+        return response.json()
+
+    def get_repos_list_per_page(self, repos_per_page, page_num):
+        """Getting repository data from git api per api page
+        """
+        try:
+            response = requests.get(constants.GITHUB_REPO_DETAILS_API_URL.format(
+                self.item_type,
+                self.organization,
+                'public',
+                repos_per_page,
+                page_num), auth=self.git_credentials)
+            return response.json()
+        except (requests.ConnectionError, requests.Timeout) as error:
+            self.logger.error(error)
+            sys.exit(1)
+
+    def _parse_repo_data(self, repo_data):
+        """Return only name and clone_url from all repo list of dicts
+        """
+        return [dict((key, data[key]) for key in ['name', 'clone_url'])
+                for data in repo_data]
+
+    def _get_all_repos_list(self, repos_per_page=100):
+        """use in 'get_repos_list_per_page' method to get all repositories
+        organization/user data
+        """
+        self.logger.info(
+            'Retrieving repository information for this {0}{1}...'.format(
+                'organization:' if self.is_organization else 'user:',
+                self.organization))
+        org_data = self._get_org_data()
+        repo_count = org_data['public_repos']
+        last_page_number = repo_count / repos_per_page
+        if (repo_count % repos_per_page) > 0:
             # Adding 2 because 1 for the extra repos that mean more page,
             #  and 1 for the next for loop.
             last_page_number += 2
+            repos_data = []
+            for page_num in xrange(1, last_page_number):
+                repo_data = self.get_repos_list_per_page(repos_per_page, page_num)
+                repos_data.extend(self._parse_repo_data(repo_data))
+            return repos_data
 
-            for page_num in range(1, last_page_number):
-                repository_data = requests.get(
-                    REPO_DETAILS_API_URL.format(self.item_type,
-                                                self.organization,
-                                                repository_type,
-                                                repository_per_page,
-                                                page_num), auth=auth)
-
-                for repository in repository_data.json():
-                    self.repository_data.append(repository)
-                self.repository_specific_data = \
-                    self._parse_json_list_of_dict(['name', url_type])
-
-    def _parse_json_list_of_dict(self, list_of_arguments):
-        return [dict((key, data[key]) for key in list_of_arguments)
-                for data in self.repository_data]
-
-    def search(self, search_list, url_type='clone_url'):
-        search_list = search_list or self.search_list
-        if len(search_list) == 0:
-            lgr.error('You must supply at least one string to search for.')
+    def get_repo_include_list(self,
+                              all_repos,
+                              repos_to_include=None,
+                              repos_to_exclude=None):
+        """ Get include or exclude repositories list ,
+        return repositories list to search on"""
+        if repos_to_exclude and repos_to_include:
+            self.logger.error(
+                'You can not both include and exclude repositories.')
             sys.exit(1)
-        self.get_github_repo_list()
-        self.cloned_repos_path = os.path.join(self.organization,
-                                              self.cloned_repos_path)
-        for repository_data in self.repository_specific_data:
-            if len(self.repos_to_check) > 0:
-                if repository_data['name'] in self.repos_to_check:
-                    repo.search(
-                        search_list=search_list,
-                        repo_url=repository_data[url_type],
-                        cloned_repo_dir=self.cloned_repos_path,
-                        results_dir=self.results_dir,
-                        print_result=False,
-                        remove_cloned_dir=False,
-                        consolidate_log=True,
-                        verbose=self.verbose)
-            else:
-                if repository_data['name'] not in self.repos_to_skip:
-                    repo.search(
-                        search_list=search_list,
-                        repo_url=repository_data[url_type],
-                        cloned_repo_dir=self.cloned_repos_path,
-                        results_dir=self.results_dir,
-                        print_result=False,
-                        remove_cloned_dir=False,
-                        consolidate_log=True,
-                        verbose=self.verbose)
-        if self.remove_cloned_dir:
-            utils.remove_repos_folder(path=self.cloned_repos_path)
+        repo_url_list = []
+        if repos_to_include:
+            for repo_name in repos_to_include:
+                for repo_data in all_repos:
+                    if repo_data['name'] == repo_name:
+                        repo_url_list.append(repo_data['clone_url'])
+        elif repos_to_exclude:
+            for repo_data in all_repos:
+                if repo_data['name'] not in repos_to_exclude:
+                    repo_url_list.append(repo_data['clone_url'])
+        else:
+            for repo_data in all_repos:
+                repo_url_list.append(repo_data['clone_url'])
+        return repo_url_list
+
+    def search(self, search_list=None):
+        """This method search the string on the organization/user
+        """
+        search_list = search_list or []
+        if len(search_list) == 0:
+            self.logger.error(
+                'You must supply at least one string to search for.')
+            sys.exit(1)
+        repos_data = self._get_all_repos_list()
+        if not os.path.isdir(self.cloned_repos_dir):
+            os.makedirs(self.cloned_repos_dir)
+        utils.handle_results_file(self.results_file_path, self.consolidate_log)
+
+        repos_url_list = self.get_repo_include_list(
+            all_repos=repos_data,
+            repos_to_include=self.repos_to_check,
+            repos_to_exclude=self.repos_to_skip)
+
+        for repo_data in repos_url_list:
+            repo.search(
+                print_result=False,
+                repo_url=repo_data,
+                verbose=self.verbose,
+                consolidate_log=True,
+                search_list=search_list,
+                remove_cloned_dir=False,
+                results_dir=self.results_dir,
+                cloned_repo_dir=self.cloned_repos_dir)
         if self.print_result:
-            utils.print_result(self.results_file_path)
+            utils.print_result_file(self.results_file_path)
+        if self.remove_cloned_dir:
+            utils.remove_repos_folder(path=self.cloned_repos_dir)
 
 
 def search(
         search_list,
         organization,
+        verbose=False,
         git_user=None,
+        config_file=None,
+        results_dir=None,
         git_password=None,
+        print_result=False,
         repos_to_skip=None,
         repos_to_check=None,
-        organization_flag=True,
-        config_file=None,
-        cloned_repos_path=constants.CLONED_REPOS_PATH,
-        results_dir=constants.RESULTS_PATH,
-        print_result=False,
+        is_organization=True,
+        cloned_repos_dir=None,
         remove_cloned_dir=False,
-        verbose=False,
         **kwargs):
+    """Api method init organization instance and search strings
+    """
+
+    utils.check_if_executable_exists_else_exit('git')
 
     if config_file:
         org = Organization.init_with_config_file(
+            verbose=verbose,
             config_file=config_file,
             print_result=print_result,
-            verbose=verbose,
-            remove_cloned_dir=remove_cloned_dir,
-            organization_flag=organization_flag)
+            is_organization=is_organization,
+            remove_cloned_dir=remove_cloned_dir)
+        conf_vars = utils.read_config_file(verbose=verbose,
+                                           config_file=config_file,
+                                           print_result=print_result,
+                                           is_organization=is_organization,
+                                           remove_cloned_dir=remove_cloned_dir)
+        search_list = conf_vars['search_list']
     else:
         org = Organization(
-            print_result=print_result,
-            search_list=search_list,
-            organization=organization,
+            verbose=verbose,
             git_user=git_user,
-            organization_flag=organization_flag,
+            results_dir=results_dir,
             git_password=git_password,
+            organization=organization,
+            print_result=print_result,
             repos_to_skip=repos_to_skip,
             repos_to_check=repos_to_check,
-            cloned_repos_path=cloned_repos_path,
-            results_dir=results_dir,
-            remove_cloned_dir=remove_cloned_dir,
-            verbose=verbose)
+            is_organization=is_organization,
+            cloned_repos_dir=cloned_repos_dir,
+            remove_cloned_dir=remove_cloned_dir)
 
     org.search(search_list=search_list)

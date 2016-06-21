@@ -14,43 +14,62 @@
 #    * limitations under the License.
 
 import os
+import sys
 import shutil
+import logging
+
 from datetime import datetime
+from distutils.spawn import find_executable
 
 import yaml
 
-from . import logger
 
-lgr = logger.init()
+def setup_logger():
+    """Define logger level
+    """
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger = logging.getLogger('surch')
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    return logger
+
+logger = setup_logger()
 
 
-def read_config_file(config_file, verbose=False, remove_cloned_dir=False,
-                     organization_flag=True, print_result=False):
+def read_config_file(config_file,
+                     verbose=False,
+                     print_result=False,
+                     is_organization=True,
+                     remove_cloned_dir=False):
     """Define vars from "config.yaml" file
     """
     with open(config_file) as config:
         conf_vars = yaml.load(config.read())
     conf_vars.setdefault('print_result', print_result)
     conf_vars.setdefault('verbose', verbose)
-    conf_vars.setdefault('organization_flag', organization_flag)
+    conf_vars.setdefault('is_organization', is_organization)
     conf_vars.setdefault('remove_cloned_dir', remove_cloned_dir)
     return conf_vars
 
 
 def remove_repos_folder(path=None):
-    lgr.info('Removing: {0}...'.format(path))
+    """print log and removing directory"""
+    logger.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 
 
-def print_results_summary(error_summary, lgr):
-    lgr.info('Summary of all errors: \n{0}'.format(
+def print_errors_summary(error_summary):
+    logger.info('Summary of all errors: \n{0}'.format(
         '\n'.join(error_summary)))
 
 
-def print_result(result_file=None):
+def print_result_file(result_file=None):
     with open(result_file) as results_file:
         results = results_file.read()
-    lgr.info(results)
+    logger.info(results)
 
 
 def convert_to_seconds(start, end):
@@ -66,7 +85,14 @@ def find_string_between_strings(string, first, last):
         return ' '
 
 
-def handle_results_file(results_file_path, consolidate_log):
+def check_if_executable_exists_else_exit(executable):
+    if not find_executable(executable):
+        logger.error('{0} executable not found and is required'.format(executable))
+        sys.exit(1)
+
+
+def handle_results_file(results_file_path,
+                        consolidate_log):
     dirname = os.path.dirname(results_file_path)
     if not os.path.isdir(os.path.dirname(results_file_path)):
         os.makedirs(dirname)
@@ -74,7 +100,7 @@ def handle_results_file(results_file_path, consolidate_log):
         if not consolidate_log:
             timestamp = str(datetime.now().strftime('%Y%m%dT%H%M%S'))
             new_log_file = results_file_path + '.' + timestamp
-            lgr.info(
+            logger.info(
                 'Previous results file found. Backing up '
                 'to {0}'.format(new_log_file))
             shutil.move(results_file_path, new_log_file)
