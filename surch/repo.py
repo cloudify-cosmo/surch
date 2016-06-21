@@ -39,7 +39,7 @@ class Repo(object):
             **kwargs):
         """Surch repo instance define var from CLI or config file
         """
-        utils.check_if_cmd_exists_else_exit('git')
+        utils.check_if_executable_exists_else_exit('git')
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -213,7 +213,7 @@ class Repo(object):
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
-            utils.print_results_summary(self.error_summary, self.logger)
+            utils.print_results_summary(self.error_summary)
         self.logger.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         self.logger.debug('Total time: {0} seconds'.format(total_time))
@@ -231,7 +231,7 @@ def search(
         remove_cloned_dir=False,
         **kwargs):
 
-    utils.check_if_cmd_exists_else_exit('git')
+    utils.check_if_executable_exists_else_exit('git')
 
     if config_file:
         repo = Repo.init_with_config_file(verbose=verbose,

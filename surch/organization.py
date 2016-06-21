@@ -40,7 +40,7 @@ class Organization(object):
             **kwargs):
         """Surch org instance define var from CLI or config file
         """
-        utils.check_if_cmd_exists_else_exit('git')
+        utils.check_if_executable_exists_else_exit('git')
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if repos_to_skip and repos_to_check:
@@ -203,7 +203,7 @@ def search(
         remove_cloned_dir=False,
         **kwargs):
 
-    utils.check_if_cmd_exists_else_exit('git')
+    utils.check_if_executable_exists_else_exit('git')
 
     if config_file:
         org = Organization.init_with_config_file(
