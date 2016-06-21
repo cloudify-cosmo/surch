@@ -45,7 +45,6 @@ def read_config_file(config_file,
                      print_result=False,
                      is_organization=True,
                      remove_cloned_dir=False):
-
     """Define vars from "config.yaml" file
     """
     with open(config_file) as config:
@@ -61,7 +60,6 @@ def read_config_file(config_file,
 
 def remove_repos_folder(path=None):
     """print log and removing directory"""
-
     logger.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 
