@@ -43,7 +43,8 @@ class Organization(object):
 
         :param organization: organization name (string)
         :param git_user: user name for authentication (string)
-        :param git_password: user password /api key for authentication (string)
+        :param git_password:
+                        user password  or api key for authentication (string)
         :param repos_to_skip: exclude repos (list)
         :param repos_to_check: include repos (list)
         :param is_organization: this flag for api (boolean)
@@ -95,8 +96,6 @@ class Organization(object):
                               print_result=False,
                               is_organization=True,
                               remove_cloned_dir=False):
-        """Init org instance from config file
-        """
         conf_vars = utils.read_config_file(verbose=verbose,
                                            config_file=config_file,
                                            print_result=print_result,
@@ -105,9 +104,6 @@ class Organization(object):
         return cls(**conf_vars)
 
     def _get_org_data(self):
-        """Getting the organization data from git api,
-            if user/org not found exit from program.
-        """
         response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:

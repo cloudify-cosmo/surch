@@ -67,7 +67,7 @@ def surch_repo(repo_url, config_file, string, print_result,
               help='String you would like to search for. '
                    'This can be passed multiple times.')
 @click.option('--exclude-repo', default='', multiple=True,
-              help='Repo you would like to skip. '
+              help='Repo you would like to exclude. '
               'This can be passed multiple times.')
 @click.option('--include-repo', default='', multiple=True,
               help='Repo you would like to include. '
@@ -117,7 +117,7 @@ def surch_org(organization_name, config_file, string, include_repo,
               help='String you would like to search for. '
               'This can be passed multiple times.')
 @click.option('--exclude-repo', default='', multiple=True,
-              help='Repo you would like to skip. '
+              help='Repo you would like to exclude. '
               'This can be passed multiple times.')
 @click.option('--include-repo', default='', multiple=True,
               help='Repo you would like to include. '
