@@ -49,4 +49,3 @@ def pagerduty_trigger(config_file=None, log=None):
     else:
         logger.error('Pagerduty error: Config file is missing.')
         sys.exit(1)
-

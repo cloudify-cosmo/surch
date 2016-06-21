@@ -54,7 +54,6 @@ class Repo(object):
                         this flag for removing the clone directory (boolean)
         """
         utils.check_if_executable_exists_else_exit('git')
-        self.config_file = config_file if config_file else None
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -64,7 +63,6 @@ class Repo(object):
         self.search_list = search_list
         self.remove_cloned_dir = remove_cloned_dir
         self.repo_url = repo_url
-        self.config_file = config_file
         self.organization = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
         self.repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
         self.cloned_repo_dir = cloned_repo_dir or os.path.join(
@@ -72,7 +70,6 @@ class Repo(object):
         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
         self.quiet_git = '--quiet' if not verbose else ''
         self.verbose = verbose
-        self.config_file = config_file
         self.pager = handler.plugins_handle(config_file=self.config_file,
                                             plugins_list=pager)
         results_dir = \
@@ -85,8 +82,11 @@ class Repo(object):
         self.result_count = 0
 
     @classmethod
-    def init_with_config_file(cls, config_file, pager=None, print_result=False,
-                              verbose=False):
+    def init_with_config_file(cls,
+                              config_file,
+                              pager=None,
+                              verbose=False,
+                              print_result=False):
         """Init repo instance from config file
         """
         conf_vars = utils.read_config_file(pager=pager,

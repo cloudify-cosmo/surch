@@ -60,9 +60,6 @@ class Organization(object):
                         this flag for removing the clone directory (boolean)
         """
         utils.check_if_executable_exists_else_exit('git')
-        self.config_file = config_file if config_file else None
-        self.pager = handler.plugins_handle(config_file=self.config_file,
-                                            plugins_list=pager)
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if repos_to_skip and repos_to_check:
@@ -127,7 +124,6 @@ class Organization(object):
         return response.json()
 
     def get_repos_list_per_page(self, repos_per_page, page_num):
-
         """Getting repository data from git api per api page
         """
         try:
