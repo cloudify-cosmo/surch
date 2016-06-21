@@ -28,8 +28,9 @@ class Pagerduty(object):
         self.dicts_number =\
             self.count_dicts_in_results_file(results_file_path)
         self.today_date = time.strftime('%Y-%m-%d')
-        self.msg = msg or 'Surch alert run check on {0} and found {1} commits.'\
-            .format(self.today_date, self.dicts_number)
+        self.msg = msg or 'Surch alert run check on {0}' \
+                          ' and found {1} ' \
+                          'commits.'.format(self.today_date, self.dicts_number)
         self.api_key = api_key
         self.service_key = service_key
 
@@ -58,7 +59,8 @@ class Pagerduty(object):
             "details": {"ping time": "1500ms",
                         "load avg": 0.75}})
         requests.post(
-            'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
+            'https://events.pagerduty.com/'
+            'generic/2010-04-15/create_event.json',
             headers=headers, data=payload, )
 
     def trigger(self):

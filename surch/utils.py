@@ -90,7 +90,8 @@ def find_string_between_strings(string, first, last):
 
 def check_if_executable_exists_else_exit(executable):
     if not find_executable(executable):
-        logger.error('{0} executable not found and is required'.format(executable))
+        logger.error(
+            '{0} executable not found and is required'.format(executable))
         sys.exit(1)
 
 
