@@ -236,7 +236,7 @@ class Repo(object):
             utils.remove_repos_folder(path=self.cloned_repo_dir)
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
-            utils.print_results_summary(self.error_summary)
+            utils.print_errors_summary(self.error_summary)
         self.logger.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         self.logger.debug('Total time: {0} seconds'.format(total_time))
