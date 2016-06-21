@@ -53,13 +53,12 @@ class Repo(object):
         :param remove_cloned_dir:
                         this flag for removing the clone directory (boolean)
         """
-
         utils.check_if_executable_exists_else_exit('git')
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-
         self.config_file = config_file if config_file else None
+
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.print_result = print_result
@@ -248,7 +247,6 @@ class Repo(object):
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_errors_summary(self.error_summary)
-
         self.logger.info('Found {0} results in {1} commits.'.format(
             self.result_count, self.commits))
         self.logger.debug('Total time: {0} seconds'.format(total_time))

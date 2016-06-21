@@ -241,6 +241,7 @@ def search(
         cloned_repos_dir=None,
         remove_cloned_dir=False,
         **kwargs):
+
     """Api method init organization instance and search strings
     """
     utils.check_if_executable_exists_else_exit('git')
