@@ -17,10 +17,10 @@ import time
 
 import requests
 
-from surch import logger
+from .. import utils
 
 
-lgr = logger.init()
+logger = utils.logger
 
 
 class Pagerduty(object):
@@ -64,9 +64,9 @@ class Pagerduty(object):
     def trigger(self):
         if self.dicts_number > 0:
             self.trigger_incident()
-            lgr.info('Pagerduty alert: "{0}"'.format(self.msg))
+            logger.info('Pagerduty alert: "{0}"'.format(self.msg))
         else:
-            lgr.info('Results file is empty')
+            logger.info('Results file is empty')
 
 
 def trigger(results_file_path, api_key, service_key, msg=None):

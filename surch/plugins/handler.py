@@ -1,10 +1,10 @@
 import sys
 
-from .. import utils, logger
+from .. import utils
 from . import pagerduty
 
 
-lgr = logger.init()
+logger = utils.logger
 
 
 def plugins_handle(plugins_list, config_file):
@@ -16,7 +16,7 @@ def plugins_handle(plugins_list, config_file):
             if config_file:
                 pass
             else:
-                lgr.error("Used a config file when you "
+                logger.error("Used a config file when you "
                           "want to use '--source/--pager'.")
                 sys.exit(1)
         return lowercase_list
@@ -30,7 +30,7 @@ def pagerduty_trigger(config_file=None, log=None):
         try:
             conf_var = conf_var['pagerduty']
         except KeyError as e:
-            lgr.error('Pagerduty error: '
+            logger.error('Pagerduty error: '
                       'can\'t run pagerduty - no "{0}" '
                       'in config file.'.format(e.message))
             sys.exit(1)
@@ -39,14 +39,14 @@ def pagerduty_trigger(config_file=None, log=None):
                               api_key=conf_var['api_key'],
                               service_key=conf_var['service_key'])
         except KeyError as e:
-            lgr.error('Pagerduty error: can\'t run pagerduty - "{0}" '
+            logger.error('Pagerduty error: can\'t run pagerduty - "{0}" '
                       'argument is missing.'.format(e.message))
             sys.exit(1)
         except TypeError as e:
-            lgr.error('Pagerduty error: '
+            logger.error('Pagerduty error: '
                       'can\'t run pagerduty - {0}.'.format(e.message))
             sys.exit(1)
     else:
-        lgr.error('Pagerduty error: Config file is missing.')
+        logger.error('Pagerduty error: Config file is missing.')
         sys.exit(1)
 
