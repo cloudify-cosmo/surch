@@ -169,7 +169,7 @@ class Repo(object):
                         commit_time=commit_time,
                         repository_name=self.repo_name,
                         organization_name=self.organization,
-                        blob_url=constants.BLOB_URL.format(
+                        blob_url=constants.GITHUB_BLOB_URL.format(
                             self.organization,
                             self.repo_name,
                             commit_sha, filepath)
