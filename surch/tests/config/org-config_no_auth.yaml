@@ -1,0 +1,6 @@
+organization: cloudify-cosmo
+search_list:
+  - import
+  - http://www.apache.org/licenses/LICENSE-2.0
+repos_to_check:
+  - surch
