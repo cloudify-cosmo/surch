@@ -118,12 +118,13 @@ class Organization(object):
         """Getting repository data from git api per api page
         """
         try:
-            response = requests.get(constants.GITHUB_REPO_DETAILS_API_URL.format(
-                self.item_type,
-                self.organization,
-                'public',
-                repos_per_page,
-                page_num), auth=self.git_credentials)
+            response = requests.get(
+                constants.GITHUB_REPO_DETAILS_API_URL.format(
+                    self.item_type,
+                    self.organization,
+                    'public',
+                    repos_per_page,
+                    page_num), auth=self.git_credentials)
             return response.json()
         except (requests.ConnectionError, requests.Timeout) as error:
             self.logger.error(error)
@@ -152,7 +153,8 @@ class Organization(object):
             last_page_number += 2
             repos_data = []
             for page_num in xrange(1, last_page_number):
-                repo_data = self.get_repos_list_per_page(repos_per_page, page_num)
+                repo_data = self.get_repos_list_per_page(repos_per_page,
+                                                         page_num)
                 repos_data.extend(self._parse_repo_data(repo_data))
             return repos_data
 
