@@ -1,9 +1,0 @@
-organization: cloudify-cosmo
-git_user: darkside53
-git_password: a591641fadfa2ca6ede0c7fc423fa81593337568
-search_list:
-  - import
-  - http://www.apache.org/licenses/LICENSE-2.0
-repos_to_check:
-  - surch
-git clone
