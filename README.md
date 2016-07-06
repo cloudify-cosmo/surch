@@ -16,7 +16,8 @@ The initial idea behind Surch was to look for secrets but it can be used to sear
 While [Gitrob](https://github.com/michenriksen/gitrob) provides mostly the same functionality (plus a whole plethora of additional features), we wanted something that would be lightweight and won't require a PostgreSQL server and other dependencies behind it. To that end, Surch requires no dependencies whatsoever aside from Python.
 
 It's important to note that currently, Surch does not tell you what it found where. It simply tells you that it found one of the strings you searched for and in which commit it was found.
- 
+
+NOTE: For now we support in python 2.7 in the future we plain to support python 3
 
 
 ## Installation
