@@ -193,7 +193,7 @@ class TestUtils(testtools.TestCase):
     def test_check_if_executable_exists_else_exit(self):
         result = self.assertRaises(
             SystemExit, utils.check_if_executable_exists_else_exit,
-            executable='saldsdasdasadsdasd')
+            executable='executable_not_exist')
         self.assertEqual('1', str(result))
 
 
