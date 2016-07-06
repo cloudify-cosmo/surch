@@ -51,12 +51,6 @@ path = os.path.abspath(__file__)
 path = path.rsplit('/', 1)[0]
 test_path = os.path.join(path, 'test')
 
-''''''
-# 1. consolidate all tests which have a common pattern
-# 2. format the code nicely (imports, names, etc..)
-# 3. Make sure all tests pass IN A SINGLE RUN!
-# 4.
-
 
 class TestRepo(testtools.TestCase):
     def test_surch_repo_command_with_arguments_and_found_results(self):
