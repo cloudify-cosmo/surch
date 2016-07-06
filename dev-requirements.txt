@@ -1,4 +1,4 @@
 nose
 nose-cov
-testfixtures
 testtools
+testfixtures
