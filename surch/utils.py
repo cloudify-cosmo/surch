@@ -40,6 +40,7 @@ logger = setup_logger()
 
 
 def read_config_file(config_file,
+                     pager=None,
                      verbose=False,
                      print_result=False,
                      is_organization=True,
@@ -48,6 +49,8 @@ def read_config_file(config_file,
     """
     with open(config_file) as config:
         conf_vars = yaml.load(config.read())
+    conf_vars.setdefault('pager', pager)
+    conf_vars.setdefault('config_file', config_file)
     conf_vars.setdefault('print_result', print_result)
     conf_vars.setdefault('verbose', verbose)
     conf_vars.setdefault('is_organization', is_organization)
