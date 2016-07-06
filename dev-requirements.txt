@@ -2,3 +2,4 @@ nose
 nose-cov
 testtools
 testfixtures
+mock
