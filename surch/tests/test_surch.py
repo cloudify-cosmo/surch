@@ -143,7 +143,7 @@ class TestRepo(testtools.TestCase):
             repo_url='https://github.com/cloudify-cosmo/surch.git',
             search_list=['a', 'b', 'c'])
         repo_class._clone_or_pull()
-        repo_path = os.path.join(constants.CLONED_REPOS_PATH,'surch')
+        repo_path = os.path.join(constants.CLONED_REPOS_PATH, 'surch')
         if not os.path.isdir(repo_path):
             repo_class._clone_or_pull()
         commits = repo_class._get_all_commits()
@@ -201,7 +201,7 @@ class TestUtils(testtools.TestCase):
             SystemExit, utils.check_if_executable_exists_else_exit,
             executable='saldsdasdasadsdasd')
         self.assertEqual('1', str(result))
-        
+
 
 class TestOrg(testtools.TestCase):
 
@@ -265,7 +265,8 @@ class TestOrg(testtools.TestCase):
         utils.remove_repos_folder(test_path)
 
     def test_surch_user_command_with_config_no_auth_and_found_results(self):
-        config_file_path = os.path.join(path, 'config/user-config_no_auth.yaml')
+        config_file_path = os.path.join(path,
+                                        'config/user-config_no_auth.yaml')
         self.args = ' '
         opts = {
             '-c': config_file_path,
@@ -287,7 +288,6 @@ class TestOrg(testtools.TestCase):
             '-v': None}
         result = _invoke_click('surch_org', [self.args], opts)
         self.assertEqual(1, result.exit_code)
-
 
     def test_get_repo_include_list_with_repos_to_include(self):
         org = organization.Organization(organization='cloudify-cosmo')
