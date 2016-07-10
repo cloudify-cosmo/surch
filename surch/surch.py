@@ -42,15 +42,18 @@ def main():
                    'When used -p and -l can\'t be same folder')
 @click.option('--pager', multiple=True, default=[],
               help='pager plugins(pagerduty).')
+@click.option('--source', multiple=True, default=[],
+              help='source plugins(Vault).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_repo(repo_url, config_file, string, print_result, pager, remove,
-               cloned_repo_dir, log, verbose):
+               source, cloned_repo_dir, log, verbose):
     """Search a single repository
     """
 
     repo.search(
         pager=pager,
+        source=source,
         results_dir=log,
         verbose=verbose,
         repo_url=repo_url,
@@ -90,16 +93,19 @@ def surch_repo(repo_url, config_file, string, print_result, pager, remove,
                    'When used -p and -l can\'t be same folder')
 @click.option('--pager', multiple=True, default=[],
               help='pager plugins(pagerduty).')
+@click.option('--source', multiple=True, default=[],
+              help='source plugins(Vault).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_org(organization_name, config_file, string, include_repo, pager,
-              exclude_repo, user, print_result, remove, password,
+              exclude_repo, user, print_result, remove, password, source,
               cloned_repos_path, log, verbose):
     """Search all or some repositories in an organization
     """
 
     organization.search(
         pager=pager,
+        source=source,
         git_user=user,
         results_dir=log,
         verbose=verbose,
@@ -143,17 +149,20 @@ def surch_org(organization_name, config_file, string, include_repo, pager,
                    'When used -p and -l can\'t be same folder')
 @click.option('--pager', multiple=True, default=[],
               help='pager plugins(pagerduty).')
+@click.option('--source', multiple=True, default=[],
+              help='source plugins(Vault).')
 @click.option('--print-result', default=False, is_flag=True)
 @click.option('-v', '--verbose', default=False, is_flag=True)
 def surch_user(organization_name, config_file, string, include_repo, pager,
                exclude_repo, user, remove, password, cloned_repos_path, log,
-               print_result, verbose):
+               print_result, source, verbose):
 
     """Search all or some repositories for a user
     """
 
     organization.search(
         pager=pager,
+        source=source,
         git_user=user,
         results_dir=log,
         verbose=verbose,

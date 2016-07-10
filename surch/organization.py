@@ -34,7 +34,9 @@ class Organization(object):
             repos_to_check=None,
             is_organization=True,
             pager=None,
+            source=None,
             verbose=False,
+            search_list=None,
             results_dir=None,
             print_result=False,
             consolidate_log=False,
@@ -77,6 +79,9 @@ class Organization(object):
         self.config_file = config_file if config_file else None
         self.pager = handler.plugins_handle(config_file=self.config_file,
                                             plugins_list=pager)
+        self.source = handler.plugins_handle(config_file=self.config_file,
+                                             plugins_list=source)
+        self.search_list = search_list
         self.print_result = print_result
         self.organization = organization
         self.results_dir = results_dir
@@ -98,14 +103,20 @@ class Organization(object):
     def init_with_config_file(cls,
                               config_file,
                               pager=None,
+                              source=None,
                               verbose=False,
+                              search_list=None,
                               print_result=False,
                               is_organization=True,
                               remove_cloned_dir=False):
         """Init org instance from config file
         """
+        source = handler.plugins_handle(config_file=config_file,
+                                        plugins_list=source)
         conf_vars = utils.read_config_file(pager=pager,
+                                           source=source,
                                            verbose=verbose,
+                                           search_list=search_list,
                                            config_file=config_file,
                                            print_result=print_result,
                                            is_organization=is_organization,
@@ -196,6 +207,9 @@ class Organization(object):
         """This method search the string on the organization/user
         """
         search_list = search_list or []
+        handler.merge_all_search_list(source=self.source,
+                                      config_file=self.config_file,
+                                      search_list=search_list)
         if len(search_list) == 0:
             self.logger.error(
                 'You must supply at least one string to search for.')
@@ -218,6 +232,7 @@ class Organization(object):
                 consolidate_log=True,
                 search_list=search_list,
                 remove_cloned_dir=False,
+                from_organization=True,
                 results_dir=self.results_dir,
                 cloned_repo_dir=self.cloned_repos_dir)
         if self.print_result:
@@ -230,13 +245,14 @@ class Organization(object):
 
 
 def search(
-        search_list,
         organization,
         pager=None,
+        source=None,
         verbose=False,
         git_user=None,
         config_file=None,
         results_dir=None,
+        search_list=None,
         git_password=None,
         print_result=False,
         repos_to_skip=None,
@@ -250,28 +266,33 @@ def search(
 
     utils.check_if_executable_exists_else_exit('git')
     pager = handler.plugins_handle(config_file=config_file, plugins_list=pager)
+    source = handler.plugins_handle(config_file=config_file,
+                                    plugins_list=source)
 
     if config_file:
+        search_list = handler.merge_all_search_list(source=source,
+                                                    config_file=config_file,
+                                                    search_list=search_list)
         org = Organization.init_with_config_file(
             pager=pager,
             verbose=verbose,
             config_file=config_file,
+            search_list=search_list,
             print_result=print_result,
             is_organization=is_organization,
             remove_cloned_dir=remove_cloned_dir)
-        conf_vars = utils.read_config_file(verbose=verbose,
-                                           config_file=config_file,
-                                           print_result=print_result,
-                                           is_organization=is_organization,
-                                           remove_cloned_dir=remove_cloned_dir)
-        search_list = conf_vars['search_list']
+
     else:
+        search_list = handler.merge_all_search_list(source=source,
+                                                    config_file=config_file,
+                                                    search_list=search_list)
         org = Organization(
             pager=pager,
             verbose=verbose,
             git_user=git_user,
             results_dir=results_dir,
             git_password=git_password,
+            search_list=search_list,
             organization=organization,
             print_result=print_result,
             repos_to_skip=repos_to_skip,

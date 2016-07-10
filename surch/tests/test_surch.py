@@ -57,7 +57,6 @@ class TestRepo(testtools.TestCase):
         self.args = 'https://github.com/cloudify-cosmo/surch.git'
         opts = {
             '-s': 'import',
-            '-s': 'import',
             '-p': os.path.join(test_path, 'repo/clones'),
             '-l': os.path.join(test_path, 'repo'),
             '-R': None}
