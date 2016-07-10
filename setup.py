@@ -49,5 +49,6 @@ setup(
         "retrying==1.3.3",
         "click==6.6",
         "tinydb==3.1.3",
+        "hvac==0.2.12"
     ]
 )
