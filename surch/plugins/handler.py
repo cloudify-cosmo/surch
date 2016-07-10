@@ -84,10 +84,10 @@ def vault_trigger(config_file=None):
 
 
 def merge_all_search_list(source, config_file, search_list):
-    # search_list =
-    conf_vars = utils.read_config_file(config_file=config_file)
-    search_list = utils.merge_2_list(search_list, conf_vars['search_list'])
-    if 'vault' in source:
+    if config_file:
+        conf_vars = utils.read_config_file(config_file=config_file)
+        search_list = utils.merge_2_list(search_list, conf_vars['search_list'])
+    if 'vault' in source and config_file:
         vault_list = vault_trigger(config_file=config_file)
         search_list = utils.merge_2_list(vault_list, search_list)
     return search_list
