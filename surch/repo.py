@@ -27,19 +27,18 @@ from . import utils, constants
 
 
 class Repo(object):
-    def __init__(
-            self,
-            repo_url,
-            search_list,
-            pager=None,
-            verbose=False,
-            config_file=None,
-            results_dir=None,
-            print_result=False,
-            cloned_repo_dir=None,
-            consolidate_log=False,
-            remove_cloned_dir=False,
-            **kwargs):
+    def __init__(self,
+                 repo_url,
+                 search_list,
+                 pager=None,
+                 verbose=False,
+                 config_file=None,
+                 results_dir=None,
+                 print_result=False,
+                 cloned_repo_dir=None,
+                 consolidate_log=False,
+                 remove_cloned_dir=False,
+                 **kwargs):
         """Surch repo instance init
 
         :param repo_url: get http / ssh repository for cloning (string)
@@ -258,27 +257,41 @@ class Repo(object):
 
 def search(
         repo_url,
-        search_list,
         pager=None,
+        source=None,
         verbose=False,
+        search_list=None,
         config_file=None,
         results_dir=None,
         print_result=False,
         cloned_repo_dir=None,
         consolidate_log=False,
+        from_organization=False,
         remove_cloned_dir=False,
         **kwargs):
     """Api method init repo instance and search strings
     """
 
     utils.check_if_executable_exists_else_exit('git')
+    source = handler.plugins_handle(config_file=config_file,
+                                    plugins_list=source)
 
     if config_file:
+        if not from_organization:
+            search_list = handler.merge_all_search_list(
+                source=source,
+                config_file=config_file,
+                search_list=search_list)
         repo = Repo.init_with_config_file(pager=pager,
                                           verbose=verbose,
                                           config_file=config_file,
                                           print_result=print_result)
     else:
+        if not from_organization:
+            search_list = handler.merge_all_search_list(
+                source=source,
+                config_file=config_file,
+                search_list=search_list)
         repo = Repo(
             verbose=verbose,
             repo_url=repo_url,
