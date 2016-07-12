@@ -33,9 +33,12 @@ setup(
     author_email='cosmo-admin@gigaspaces.com',
     license='LICENSE',
     platforms='linux',
-    description='Creates Python Wheel based archives.',
+    description='Search strings in Github repositories or organizations',
     long_description=read('README.rst'),
-    packages=['surch'],
+    packages=[
+        'surch',
+        'surch.plugins',
+    ],
     include_package_data=True,
     entry_points={
         'console_scripts': [
@@ -44,11 +47,13 @@ setup(
     },
     install_requires=[
         "sh==1.11",
+        "click==6.6",
         "pyyaml==3.11",
+        "hvac==0.2.12",
+        "tinydb==3.1.3",
         "requests==2.9.1",
         "retrying==1.3.3",
-        "click==6.6",
-        "tinydb==3.1.3",
-        "hvac==0.2.12"
     ]
 )
+
+
