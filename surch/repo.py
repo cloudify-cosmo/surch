@@ -22,7 +22,7 @@ from time import time
 import retrying
 from tinydb import TinyDB
 
-from plugins import handler
+from .plugins import handler
 from . import utils, constants
 
 

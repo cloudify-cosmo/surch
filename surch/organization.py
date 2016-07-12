@@ -19,7 +19,7 @@ import logging
 
 import requests
 
-from plugins import handler
+from .plugins import handler
 from . import repo, utils, constants
 
 
