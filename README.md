@@ -53,33 +53,34 @@ Commands:
 $ surch repo http://github.com/cloudify-cosmo/surch --string Surch --string Burch
 ...
 
-INFO - Cloning repo surch from org cloudify-cosmo to /home/nir0s/.surch/clones/cloudify-cosmo/surch...
-INFO - Scanning repo `surch` for 2 string(s)...
-INFO - Writing results to: /home/nir0s/.surch/results/cloudify-cosmo/results.json...
-INFO - Found 110 results in 33 commits.
+2016-07-14 08:41:57,769 - surch - INFO - Pulling repo: surch...
+2016-07-14 08:41:58,540 - surch - INFO - Scanning repo surch for 2 string(s)...
+2016-07-14 08:41:59,579 - surch - INFO - Writing results to: ~/.surch/results/results.json...
+2016-07-14 08:42:13,008 - surch - INFO - Found 603 results in 123 commits.
+
 ...
 
-$ cat ~/.surch/results/cloudify-cosmo/results.json
+$ cat ~/.surch/results/results.json
 ...
 
 {
     "_default": {
         "1": {
-            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/c4c72136c168514c0f17f8b03f0495eb8f5ee9fd/README.rst",
-            "commit_sha": "c4c72136c168514c0f17f8b03f0495eb8f5ee9fd",
-            "commit_time": "Thu May 19 17:49:30 2016",
+            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/46a5321e902c0bad927458f94825ec7ca0aab128/README.md",
+            "commit_sha": "46a5321e902c0bad927458f94825ec7ca0aab128",
+            "commit_time": "Tue Jul 12 10:15:30 2016",
             "email": "Havivv1305@gmail.com",
-            "filepath": "README.rst",
+            "filepath": "README.md",
             "organization_name": "cloudify-cosmo",
             "repository_name": "surch",
             "username": "haviv"
         },
         "2": {
-            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/c4c72136c168514c0f17f8b03f0495eb8f5ee9fd/surch/organization.py",
-            "commit_sha": "c4c72136c168514c0f17f8b03f0495eb8f5ee9fd",
-            "commit_time": "Thu May 19 17:49:30 2016",
+            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/46a5321e902c0bad927458f94825ec7ca0aab128/README.rst",
+            "commit_sha": "46a5321e902c0bad927458f94825ec7ca0aab128",
+            "commit_time": "Tue Jul 12 10:15:30 2016",
             "email": "Havivv1305@gmail.com",
-            "filepath": "surch/organization.py",
+            "filepath": "README.rst",
             "organization_name": "cloudify-cosmo",
             "repository_name": "surch",
             "username": "haviv"
@@ -94,14 +95,16 @@ $ cat ~/.surch/results/cloudify-cosmo/results.json
 NOTE: to search in an organization, replace `user` with `org`
 
 ```shell
-$ surch user havivw --string banana
+$ surch user havivw --string surch
 ...
 
-INFO - Retrieving list of repositories for the organization...
-INFO - Cloning repo cloudify-interactive-tutorial from org Havivw to /home/nir0s/.surch/clones/Havivw/cloudify-interactive-tutorial...
-INFO - Scanning repo `cloudify-interactive-tutorial` for 1 string(s)...
-INFO - Writing results to: /home/nir0s/.surch/results/Havivw/results.json...
-INFO - Found 0 results in 45 commits.
+2016-07-14 08:47:16,294 - surch - WARNING - Choosing not to provide GitHub credentials limits requests to GitHub to 60/h. This might affect cloning.
+2016-07-14 08:47:16,294 - surch - INFO - Retrieving repository information for this user:havivw...
+2016-07-14 08:47:17,727 - surch - INFO - Previous results file found. Backing up to ~/.surch/results/results.json.20160714T084717
+2016-07-14 08:47:17,729 - surch - INFO - Cloning repo cloudify-interactive-tutorial from org Havivw to ~/.surch/clones/cloudify-interactive-tutorial...
+2016-07-14 08:47:22,677 - surch - INFO - Scanning repo cloudify-interactive-tutorial for 1 string(s)...
+2016-07-14 08:47:23,215 - surch - INFO - Writing results to: ~/.surch/results/results.json...
+2016-07-14 08:47:23,215 - surch - INFO - Found 0 results in 45 commits.
 ...
 
 ```
