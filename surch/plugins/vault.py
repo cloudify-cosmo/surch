@@ -42,7 +42,8 @@ class Vault(object):
             secret = secret_names.popleft().encode('ascii')
             if secret.endswith('/'):
                 keys = self.keys_list(extra_path=secret)
-                secret_names.extend([os.path.join(secret, key) for key in keys])
+                secret_names.extend(
+                    [os.path.join(secret, key) for key in keys])
                 continue
 
             secret_from_vault = self.client.read(
