@@ -273,6 +273,7 @@ def search(
         search_list = handler.merge_all_search_list(source=source,
                                                     config_file=config_file,
                                                     search_list=search_list)
+        print search_list
         org = Organization.init_with_config_file(
             pager=pager,
             verbose=verbose,

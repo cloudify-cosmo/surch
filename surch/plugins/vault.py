@@ -57,7 +57,10 @@ class Vault(object):
                             if 'ssh-rsa' not in value.lower():
                                 try:
                                     value = "{0}".format(value.encode('ascii'))
-                                    search_list.append(re.escape(value))
+                                    if 'password' not in value.lower():
+                                        search_list.append(re.escape(value))
+                                    else:
+                                        pass
                                 except AttributeError:
                                     search_list.append(value)
         return search_list
