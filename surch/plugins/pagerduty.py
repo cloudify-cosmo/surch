@@ -36,16 +36,11 @@ class Pagerduty(object):
 
     @staticmethod
     def count_dicts_in_results_file(file_path):
-        i = 0
         try:
-            with open(file_path) as results_file:
-                results = json.load(results_file)
-            for key, value in results.items():
-                for k, v in value.items():
-                    i += 1
+            with open(file_path, 'r') as results_file:
+                return len(json.load(results_file)['_default'])
         except:
-            pass
-        return i
+            return 0
 
     def trigger_incident(self):
         headers = {'Authorization': 'Token token={0}'.format(self.api_key),
