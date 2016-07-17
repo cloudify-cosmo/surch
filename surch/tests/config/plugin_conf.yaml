@@ -1,7 +1,6 @@
 search_list:
   - string-1
-  - string-2
-  - string-3
+  - string-1
 
 vault:
   vault_url: 'http://vault.com:8200'
