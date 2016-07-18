@@ -18,10 +18,6 @@ import mock
 
 import testtools
 
-from surch import utils
-import surch.surch as surch
-from surch import constants
-from surch.plugins import vault
 from surch.plugins import handler
 from surch.plugins import pagerduty
 
@@ -59,13 +55,6 @@ class TestPagerduty(testtools.TestCase):
         self.assertTrue('<Response [200]>' in str(trigger))
 
     def test_pagerduty_trigger_400(self):
-        api_key = 'zOjKTFAIRSufjZeAEx'
-        service_key = 'qq6ed4o6ytle6ohmusmhtm41n3fuih'
-        trigger = pagerduty.trigger(results_file_path, api_key, service_key)
-        self.assertTrue('<Response [400]>' in str(trigger))
-
-    def test_pagerduty_trigger_empty(self):
-        results_file_path = os.path.join(path, 'config/empty_results.json')
         api_key = 'zOjKTFAIRSufjZeAEx'
         service_key = 'qq6ed4o6ytle6ohmusmhtm41n3fuih'
         trigger = pagerduty.trigger(results_file_path, api_key, service_key)
