@@ -28,8 +28,7 @@ class Pagerduty(object):
         self.dicts_number =\
             self.count_dicts_in_results_file(results_file_path)
         self.today_date = time.strftime('%Y-%m-%d')
-        self.msg = msg or 'Surch alert run check on {0}' \
-                          ' and found {1} ' \
+        self.msg = msg or 'Surch alert run check on {0} and found {1} ' \
                           'commits.'.format(self.today_date, self.dicts_number)
         self.api_key = api_key
         self.service_key = service_key

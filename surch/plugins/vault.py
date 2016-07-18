@@ -27,7 +27,10 @@ class Vault(object):
         self.secret_path = secret_path
         self.key_list = key_list
         self.client = hvac.Client(url=vault_url, token=vault_token)
-
+        print '0'*20
+        print self.client
+        print '0'*20
+        
     def keys_list(self, extra_path=''):
         all_data = self.client.list(os.path.join(self.secret_path, extra_path))
         data = all_data['data']
