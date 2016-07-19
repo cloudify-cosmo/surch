@@ -27,10 +27,7 @@ class Vault(object):
         self.secret_path = secret_path
         self.key_list = key_list
         self.client = hvac.Client(url=vault_url, token=vault_token)
-        print '0'*20
-        print self.client
-        print '0'*20
-        
+
     def keys_list(self, extra_path=''):
         all_data = self.client.list(os.path.join(self.secret_path, extra_path))
         data = all_data['data']
@@ -48,13 +45,15 @@ class Vault(object):
                 secret_names.extend(
                     [os.path.join(secret, key) for key in keys])
                 continue
-
             secret_from_vault = self.client.read(
                 '{0}/{1}'.format(self.secret_path, secret))
             secret_from_vault = secret_from_vault['data']
             for key, value in secret_from_vault.items():
                 for regex in self.key_list:
-                    p = re.compile(regex.lower())
+                    try:
+                        p = re.compile(regex.lower())
+                    except:
+                        pass
                     if value:
                         if p.match(key.lower()):
                             if 'ssh-rsa' not in value.lower():
