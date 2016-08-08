@@ -12,6 +12,7 @@
 #    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
+
 import re
 import os
 from collections import deque
@@ -67,7 +68,10 @@ class Vault(object):
 
 
 def get_search_list(vault_url, vault_token, secret_path, key_list=None):
-    key_list = KEY_LIST if not key_list else key_list
-    vault = Vault(vault_url=vault_url, vault_token=vault_token,
-                  secret_path=secret_path, key_list=key_list)
+    key_list = key_list or KEY_LIST
+    vault = Vault(
+        vault_url=vault_url,
+        vault_token=vault_token,
+        secret_path=secret_path,
+        key_list=key_list)
     return vault.get_search_list()

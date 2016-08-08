@@ -14,35 +14,34 @@
 #    * limitations under the License.
 
 import os
-import sys
 import logging
 
 import requests
 
 from .plugins import handler
+from .exceptions import SurchError
 from . import repo, utils, constants
 
 
 class Organization(object):
-    def __init__(
-            self,
-            organization,
-            config_file=None,
-            git_user=None,
-            git_password=None,
-            repos_to_skip=None,
-            repos_to_check=None,
-            is_organization=True,
-            pager=None,
-            source=None,
-            verbose=False,
-            search_list=None,
-            results_dir=None,
-            print_result=False,
-            consolidate_log=False,
-            cloned_repos_dir=None,
-            remove_cloned_dir=False,
-            **kwargs):
+    def __init__(self,
+                 organization,
+                 config_file=None,
+                 git_user=None,
+                 git_password=None,
+                 repos_to_skip=None,
+                 repos_to_check=None,
+                 is_organization=True,
+                 pager=None,
+                 source=None,
+                 verbose=False,
+                 search_list=None,
+                 results_dir=None,
+                 print_result=False,
+                 consolidate_log=False,
+                 cloned_repos_dir=None,
+                 remove_cloned_dir=False,
+                 **kwargs):
         """Surch org instance init
 
         :param organization: organization name (string)
@@ -65,9 +64,8 @@ class Organization(object):
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if repos_to_skip and repos_to_check:
-            self.logger.warn(
+            raise (
                 'You can\'t both include and exclude repositories.')
-            sys.exit(1)
         if not git_user or not git_password:
             self.logger.warn(
                 'Choosing not to provide GitHub credentials limits '
@@ -111,27 +109,27 @@ class Organization(object):
                               remove_cloned_dir=False):
         """Init org instance from config file
         """
-        source = handler.plugins_handle(config_file=config_file,
-                                        plugins_list=source)
-        conf_vars = utils.read_config_file(pager=pager,
-                                           source=source,
-                                           verbose=verbose,
-                                           search_list=search_list,
-                                           config_file=config_file,
-                                           print_result=print_result,
-                                           is_organization=is_organization,
-                                           remove_cloned_dir=remove_cloned_dir)
+        source = handler.plugins_handle(
+            config_file=config_file, plugins_list=source)
+        conf_vars = utils.read_config_file(
+            pager=pager,
+            source=source,
+            verbose=verbose,
+            search_list=search_list,
+            config_file=config_file,
+            print_result=print_result,
+            is_organization=is_organization,
+            remove_cloned_dir=remove_cloned_dir)
         return cls(**conf_vars)
 
     def _get_org_data(self):
         response = requests.get(constants.GITHUB_API_URL.format(
             self.item_type, self.organization), auth=self.git_credentials)
         if response.status_code == requests.codes.NOT_FOUND:
-            self.logger.error(
+            raise SurchError(
                 'The organization or user {0} could not be found. '
                 'Please make sure you use the correct type (org/user).'.format(
                     self.organization))
-            sys.exit(1)
         return response.json()
 
     def get_repos_list_per_page(self, repos_per_page, page_num):
@@ -147,8 +145,7 @@ class Organization(object):
                     page_num), auth=self.git_credentials)
             return response.json()
         except (requests.ConnectionError, requests.Timeout) as error:
-            self.logger.error(error)
-            sys.exit(1)
+            raise SurchError(error)
 
     def _parse_repo_data(self, repo_data):
         """Return only name and clone_url from all repo list of dicts
@@ -157,7 +154,7 @@ class Organization(object):
                 for data in repo_data]
 
     def _get_all_repos_list(self, repos_per_page=100):
-        """use in 'get_repos_list_per_page' method to get all repositories
+        """Use in 'get_repos_list_per_page' method to get all repositories
         organization/user data
         """
         self.logger.info(
@@ -182,12 +179,12 @@ class Organization(object):
                               all_repos,
                               repos_to_include=None,
                               repos_to_exclude=None):
-        """ Get include or exclude repositories list ,
-        return repositories list to search on"""
+        """Get include or exclude repositories list,
+        return repositories list to search on
+        """
         if repos_to_exclude and repos_to_include:
-            self.logger.error(
+            raise SurchError(
                 'You can not both include and exclude repositories.')
-            sys.exit(1)
         repo_url_list = []
         if repos_to_include:
             for repo_name in repos_to_include:
@@ -207,13 +204,13 @@ class Organization(object):
         """This method search the string on the organization/user
         """
         search_list = search_list or []
-        handler.merge_all_search_list(source=self.source,
-                                      config_file=self.config_file,
-                                      search_list=search_list)
+        handler.merge_all_search_list(
+            source=self.source,
+            config_file=self.config_file,
+            search_list=search_list)
         if len(search_list) == 0:
-            self.logger.error(
+            raise SurchError(
                 'You must supply at least one string to search for.')
-            sys.exit(1)
         repos_data = self._get_all_repos_list()
         if not os.path.isdir(self.cloned_repos_dir):
             os.makedirs(self.cloned_repos_dir)
@@ -244,36 +241,35 @@ class Organization(object):
                                       log=self.results_file_path)
 
 
-def search(
-        organization,
-        pager=None,
-        source=None,
-        verbose=False,
-        git_user=None,
-        config_file=None,
-        results_dir=None,
-        search_list=None,
-        git_password=None,
-        print_result=False,
-        repos_to_skip=None,
-        repos_to_check=None,
-        is_organization=True,
-        cloned_repos_dir=None,
-        remove_cloned_dir=False,
-        **kwargs):
-    """Api method init organization instance and search strings
+def search(organization,
+           pager=None,
+           source=None,
+           verbose=False,
+           git_user=None,
+           config_file=None,
+           results_dir=None,
+           search_list=None,
+           git_password=None,
+           print_result=False,
+           repos_to_skip=None,
+           repos_to_check=None,
+           is_organization=True,
+           cloned_repos_dir=None,
+           remove_cloned_dir=False,
+           **kwargs):
+    """API method init organization instance and search strings
     """
 
     utils.check_if_executable_exists_else_exit('git')
-    pager = handler.plugins_handle(config_file=config_file, plugins_list=pager)
-    source = handler.plugins_handle(config_file=config_file,
-                                    plugins_list=source)
+    pager = handler.plugins_handle(
+        config_file=config_file, plugins_list=pager)
+    source = handler.plugins_handle(
+        config_file=config_file, plugins_list=source)
 
+    search_list = handler.merge_all_search_list(
+        source=source, config_file=config_file, search_list=search_list)
     if config_file:
-        search_list = handler.merge_all_search_list(source=source,
-                                                    config_file=config_file,
-                                                    search_list=search_list)
-        print search_list
+        print(search_list)
         org = Organization.init_with_config_file(
             pager=pager,
             verbose=verbose,
@@ -284,9 +280,6 @@ def search(
             remove_cloned_dir=remove_cloned_dir)
 
     else:
-        search_list = handler.merge_all_search_list(source=source,
-                                                    config_file=config_file,
-                                                    search_list=search_list)
         org = Organization(
             pager=pager,
             verbose=verbose,

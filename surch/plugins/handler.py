@@ -1,7 +1,7 @@
-import sys
-
 from .. import utils
 from . import pagerduty, vault
+from ..exceptions import SurchError
+
 
 logger = utils.logger
 KEY_LIST = ('.*password.*', '.*key.*', '.*secret.*', '.*id.*', '.*endpoint.*',
@@ -17,9 +17,9 @@ def plugins_handle(plugins_list, config_file):
             if config_file:
                 pass
             else:
-                logger.error("Used a config file when you "
-                             "want to use '--source/--pager'.")
-                sys.exit(1)
+                raise SurchError(
+                    "Used a config file when you want to use "
+                    "'--source/--pager'.")
         return lowercase_list
     else:
         return ('')
@@ -31,25 +31,24 @@ def pagerduty_trigger(config_file=None, log=None):
         try:
             conf_var = conf_var['pagerduty']
         except KeyError as e:
-            logger.error('Pagerduty error: '
-                         'can\'t run pagerduty - no "{0}" '
-                         'in config file.'.format(e.message))
-            sys.exit(1)
+            raise SurchError(
+                'Pagerduty error: '
+                'can\'t run pagerduty - no "{0}" '
+                'in config file.'.format(e.message))
         try:
             pagerduty.trigger(results_file_path=log,
                               api_key=conf_var['api_key'],
                               service_key=conf_var['service_key'])
         except KeyError as e:
-            logger.error('Pagerduty error: can\'t run pagerduty - "{0}" '
-                         'argument is missing.'.format(e.message))
-            sys.exit(1)
+            raise SurchError(
+                'Pagerduty error: can\'t run pagerduty - "{0}" '
+                'argument is missing.'.format(e.message))
         except TypeError as e:
-            logger.error('Pagerduty error: '
-                         'can\'t run pagerduty - {0}.'.format(e.message))
-            sys.exit(1)
+            raise SurchError(
+                'Pagerduty error: can\'t run pagerduty - {0}.'.format(
+                    e.message))
     else:
-        logger.error('Pagerduty error: Config file is missing.')
-        sys.exit(1)
+        raise SurchError('Pagerduty error: Config file is missing.')
 
 
 def vault_trigger(config_file=None):
@@ -72,22 +71,22 @@ def vault_trigger(config_file=None):
                 secret_path=conf_var['secret_path'],
                 key_list=key_list)
         except KeyError as e:
-            logger.error('Vault error: can\'t run vault - "{0}" '
-                         'argument is missing.'.format(e.message))
-            sys.exit(1)
+            raise SurchError(
+                'Vault error: can\'t run vault - "{0}" '
+                'argument is missing.'.format(e.message))
         except TypeError as e:
             logger.error('Vault error: '
                          'can\'t run vault - {0}.'.format(e.message))
     else:
-        logger.error('Vault error: Config file is missing.')
-        sys.exit(1)
+        raise SurchError('Vault error: Config file is missing.')
 
 
 def merge_all_search_list(source, config_file, search_list):
     if config_file:
         conf_vars = utils.read_config_file(config_file=config_file)
-        search_list = utils.merge_2_list(search_list, conf_vars['search_list'])
+        search_list = utils.merge_to_list(
+            search_list, conf_vars['search_list'])
     if 'vault' in source and config_file:
         vault_list = vault_trigger(config_file=config_file)
-        search_list = utils.merge_2_list(vault_list, search_list)
+        search_list = utils.merge_to_list(vault_list, search_list)
     return search_list

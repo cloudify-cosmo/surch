@@ -14,7 +14,6 @@
 #    * limitations under the License.
 
 import os
-import sys
 import logging
 import subprocess
 from time import time
@@ -24,6 +23,7 @@ from tinydb import TinyDB
 
 from .plugins import handler
 from . import utils, constants
+from .exceptions import SurchError
 
 
 class Repo(object):
@@ -75,7 +75,7 @@ class Repo(object):
         results_dir = \
             os.path.join(results_dir, 'results.json') if results_dir else None
         self.results_file_path = results_dir or os.path.join(
-                constants.RESULTS_PATH, self.organization, 'results.json')
+            constants.RESULTS_PATH, self.organization, 'results.json')
         utils.handle_results_file(self.results_file_path, consolidate_log)
 
         self.error_summary = []
@@ -162,7 +162,7 @@ class Repo(object):
             return []
 
     def _search_commit(self, commit, search_string):
-        """ Run git grep on the commit
+        """Run git grep on the commit
         """
         try:
             matched_files = subprocess.check_output(
@@ -173,7 +173,7 @@ class Repo(object):
             return []
 
     def _write_results(self, results):
-        """ Write the result to DB
+        """Write the result to DB
         """
         db = TinyDB(
             self.results_file_path,
@@ -215,7 +215,7 @@ class Repo(object):
                     pass
 
     def _get_user_details(self, sha):
-        """ Return user_name, user_email, commit_time
+        """Return user_name, user_email, commit_time
         per commit before write to DB
         """
         details = subprocess.check_output(
@@ -231,9 +231,8 @@ class Repo(object):
         """
         search_list = search_list or self.search_list
         if len(search_list) == 0:
-            self.logger.error(
+            raise SurchError(
                 'You must supply at least one string to search for.')
-            sys.exit(1)
 
         start = time()
         self._clone_or_pull()
@@ -255,43 +254,38 @@ class Repo(object):
                                       log=self.results_file_path)
 
 
-def search(
-        repo_url,
-        pager=None,
-        source=None,
-        verbose=False,
-        search_list=None,
-        config_file=None,
-        results_dir=None,
-        print_result=False,
-        cloned_repo_dir=None,
-        consolidate_log=False,
-        from_organization=False,
-        remove_cloned_dir=False,
-        **kwargs):
-    """Api method init repo instance and search strings
+def search(repo_url,
+           pager=None,
+           source=None,
+           verbose=False,
+           search_list=None,
+           config_file=None,
+           results_dir=None,
+           print_result=False,
+           cloned_repo_dir=None,
+           consolidate_log=False,
+           from_organization=False,
+           remove_cloned_dir=False,
+           **kwargs):
+    """API method init repo instance and search strings
     """
 
     utils.check_if_executable_exists_else_exit('git')
-    source = handler.plugins_handle(config_file=config_file,
-                                    plugins_list=source)
+    source = handler.plugins_handle(
+        config_file=config_file, plugins_list=source)
 
+    if not from_organization:
+        search_list = handler.merge_all_search_list(
+            source=source,
+            config_file=config_file,
+            search_list=search_list)
     if config_file:
-        if not from_organization:
-            search_list = handler.merge_all_search_list(
-                source=source,
-                config_file=config_file,
-                search_list=search_list)
-        repo = Repo.init_with_config_file(pager=pager,
-                                          verbose=verbose,
-                                          config_file=config_file,
-                                          print_result=print_result)
+        repo = Repo.init_with_config_file(
+            pager=pager,
+            verbose=verbose,
+            config_file=config_file,
+            print_result=print_result)
     else:
-        if not from_organization:
-            search_list = handler.merge_all_search_list(
-                source=source,
-                config_file=config_file,
-                search_list=search_list)
         repo = Repo(
             verbose=verbose,
             repo_url=repo_url,

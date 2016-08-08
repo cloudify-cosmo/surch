@@ -17,11 +17,12 @@ import os
 import sys
 import shutil
 import logging
-
 from datetime import datetime
 from distutils.spawn import find_executable
 
 import yaml
+
+from .exceptions import SurchError
 
 
 def setup_logger():
@@ -29,7 +30,7 @@ def setup_logger():
     """
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger = logging.getLogger('surch')
     logger.addHandler(handler)
@@ -39,7 +40,7 @@ def setup_logger():
 logger = setup_logger()
 
 
-def merge_2_list(list1, list2):
+def merge_to_list(list1, list2):
     list = []
     for value in list1:
         value = value.encode('ascii')
@@ -82,7 +83,7 @@ def read_config_file(config_file,
 
 
 def remove_repos_folder(path=None):
-    """print log and removing directory"""
+    """Print log and removing directory"""
     logger.info('Removing: {0}...'.format(path))
     shutil.rmtree(path)
 
@@ -113,13 +114,11 @@ def find_string_between_strings(string, first, last):
 
 def check_if_executable_exists_else_exit(executable):
     if not find_executable(executable):
-        logger.error(
+        raise SurchError(
             '{0} executable not found and is required'.format(executable))
-        sys.exit(1)
 
 
-def handle_results_file(results_file_path,
-                        consolidate_log):
+def handle_results_file(results_file_path, consolidate_log):
     dirname = os.path.dirname(results_file_path)
     if not os.path.isdir(os.path.dirname(results_file_path)):
         os.makedirs(dirname)

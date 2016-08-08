@@ -20,11 +20,12 @@ import mock
 import testtools
 import click.testing as clicktest
 
-from surch import repo
-from surch import utils
-import surch.surch as surch
-from surch import constants
-from surch import organization
+from .. import repo
+from .. import utils
+from .. import surch
+from .. import constants
+from .. import organization
+from ..exceptions import SurchError
 
 
 def _invoke_click(func, args=None, opts=None):
@@ -107,15 +108,16 @@ class TestRepo(testtools.TestCase):
         utils.remove_repos_folder(test_path)
 
     def test_create_search_strings(self):
-        Repo = repo.Repo(repo_url='',
-                         search_list='',
-                         verbose=False,
-                         results_dir=None,
-                         print_result=False,
-                         cloned_repo_dir=None,
-                         consolidate_log=False,
-                         remove_cloned_dir=False)
-        search_list = Repo._create_search_string(['a', 'b', 'c'])
+        repository = repo.Repo(
+            repo_url='',
+            search_list='',
+            verbose=False,
+            results_dir=None,
+            print_result=False,
+            cloned_repo_dir=None,
+            consolidate_log=False,
+            remove_cloned_dir=False)
+        search_list = repository._create_search_string(['a', 'b', 'c'])
         success = search_list == "'a' --or -e 'b' --or -e 'c'"
         self.assertTrue(success)
 
@@ -191,7 +193,7 @@ class TestUtils(testtools.TestCase):
 
     def test_check_if_executable_exists_else_exit(self):
         result = self.assertRaises(
-            SystemExit, utils.check_if_executable_exists_else_exit,
+            SurchError, utils.check_if_executable_exists_else_exit,
             executable='executable_not_exist')
         self.assertEqual('1', str(result))
 
@@ -317,7 +319,7 @@ class TestOrg(testtools.TestCase):
         repos_to_exclude = ['a', 'c', 'd', 'f']
         repos_to_include = ['b', 'e', 'g']
         result = self.assertRaises(
-            SystemExit, org.get_repo_include_list,
+            SurchError, org.get_repo_include_list,
             all_repos=all_repo, repos_to_exclude=repos_to_exclude,
             repos_to_include=repos_to_include)
         self.assertEqual('1', str(result))
