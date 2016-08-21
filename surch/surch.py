@@ -13,14 +13,98 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+import sys
+
 import click
 
-from . import repo, organization, constants
+from . import repo
+from . import constants
+from . import organization
+from .exceptions import SurchError
 
 
 CLICK_CONTEXT_SETTINGS = dict(
     help_option_names=['-h', '--help'],
     token_normalize_func=lambda param: param.lower())
+
+
+config_file = click.option(
+    '-c',
+    '--config-file',
+    default=None,
+    type=click.Path(exists=False, file_okay=True),
+    help='A path to a Surch config file')
+
+search_string = click.option(
+    '-s',
+    '--string',
+    multiple=True,
+    help='String you would like to search for. '
+    'This can be passed multiple times.')
+
+cloned_repos_path = click.option(
+    '-p',
+    '--cloned-repos-dir',
+    default=constants.CLONED_REPOS_PATH,
+    help='Directory to clone repository to. '
+    '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
+
+log_path = click.option(
+    '-l',
+    '--log',
+    default=constants.RESULTS_PATH,
+    help='All results will be logged to this directory. '
+    '[defaults to {0}]'.format(constants.RESULTS_PATH))
+
+remove_clone = click.option(
+    '-R',
+    '--remove',
+    default=False,
+    is_flag=True,
+    help="Remove clone repo directory. "
+         "When used -p and -l can't be same folder")
+
+pager = click.option(
+    '--pager',
+    multiple=True,
+    default=[],
+    help='Pager plugin to use')
+
+source = click.option(
+    '--source',
+    multiple=True,
+    default=[],
+    help='Data source plugin to use')
+
+printout = click.option('--print-result', default=False, is_flag=True)
+verbose = click.option('-v', '--verbose', default=False, is_flag=True)
+
+
+exclude_repo = click.option(
+    '--exclude-repo',
+    default='',
+    multiple=True,
+    help='Repo you would like to exclude. '
+    'This can be passed multiple times.')
+
+include_repo = click.option(
+    '--include-repo',
+    default='',
+    multiple=True,
+    help='Repo you would like to include. '
+    'This can be passed multiple times.')
+
+github_user = click.option(
+    '-U',
+    '--user',
+    default=None,
+    help='Git user name for authenticate.')
+
+github_password = click.option(
+    '-P',
+    '--password',
+    default=None,
+    help='Git user password for authenticate')
 
 
 @click.group(context_settings=CLICK_CONTEXT_SETTINGS)
@@ -29,28 +113,16 @@ def main():
 
 
 @main.command(name='repo')
-@click.argument('repo_url', required=False)
-@click.option('-c', '--config-file', default=None,
-              type=click.Path(exists=False, file_okay=True),
-              help='A path to a Surch config file')
-@click.option('-s', '--string', multiple=True,
-              help='String you would like to search for. '
-              'This can be passed multiple times.')
-@click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
-              help='Directory to clone repository to. '
-              '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
-@click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this directory. '
-              '[defaults to {0}]'.format(constants.RESULTS_PATH))
-@click.option('-R', '--remove', default=False, is_flag=True,
-              help='Remove clone repo directory. '
-                   'When used -p and -l can\'t be same folder')
-@click.option('--pager', multiple=True, default=[],
-              help='pager plugins(pagerduty).')
-@click.option('--source', multiple=True, default=[],
-              help='source plugins(Vault).')
-@click.option('--print-result', default=False, is_flag=True)
-@click.option('-v', '--verbose', default=False, is_flag=True)
+@click.argument('repo-url', required=False)
+@config_file
+@search_string
+@cloned_repos_path
+@log_path
+@remove_clone
+@pager
+@source
+@printout
+@verbose
 def surch_repo(repo_url,
                config_file,
                string,
@@ -58,7 +130,7 @@ def surch_repo(repo_url,
                pager,
                remove,
                source,
-               cloned_repo_dir,
+               cloned_repos_dir,
                log,
                verbose):
     """Search a single repository
@@ -74,44 +146,26 @@ def surch_repo(repo_url,
             search_list=list(string),
             remove_cloned_dir=remove,
             print_result=print_result,
-            cloned_repo_dir=cloned_repo_dir)
+            cloned_repo_dir=cloned_repos_dir)
     except SurchError as ex:
         sys.exit(ex)
 
 
 @main.command(name='org')
-@click.argument('organization_name', required=False)
-@click.option('-c', '--config-file', default=None,
-              type=click.Path(exists=False, file_okay=True),
-              help='A path to a Surch config file')
-@click.option('-s', '--string', multiple=True,
-              help='String you would like to search for. '
-                   'This can be passed multiple times.')
-@click.option('--exclude-repo', default='', multiple=True,
-              help='Repo you would like to exclude. '
-              'This can be passed multiple times.')
-@click.option('--include-repo', default='', multiple=True,
-              help='Repo you would like to include. '
-              'This can be passed multiple times.')
-@click.option('-U', '--user', default=None,
-              help='Git user name for authenticate.')
-@click.option('-P', '--password', default=None, required=False,
-              help='Git user password for authenticate')
-@click.option('-p', '--cloned-repos-path', default=constants.CLONED_REPOS_PATH,
-              help='Directory to contain all cloned repositories. '
-              '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
-@click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this directory. '
-              '[defaults to {0}]'.format(constants.RESULTS_PATH))
-@click.option('-R', '--remove', default=False, is_flag=True,
-              help='Remove clone repo directory. '
-                   'When used -p and -l can\'t be same folder')
-@click.option('--pager', multiple=True, default=[],
-              help='pager plugins(pagerduty).')
-@click.option('--source', multiple=True, default=[],
-              help='source plugins(Vault).')
-@click.option('--print-result', default=False, is_flag=True)
-@click.option('-v', '--verbose', default=False, is_flag=True)
+@click.argument('organization-name', required=False)
+@config_file
+@search_string
+@cloned_repos_path
+@log_path
+@remove_clone
+@exclude_repo
+@include_repo
+@github_user
+@github_password
+@pager
+@source
+@printout
+@verbose
 def surch_org(organization_name,
               config_file,
               string,
@@ -123,12 +177,11 @@ def surch_org(organization_name,
               remove,
               password,
               source,
-              cloned_repos_path,
+              cloned_repos_dir,
               log,
               verbose):
     """Search all or some repositories in an organization
     """
-
     try:
         organization.search(
             pager=pager,
@@ -144,45 +197,27 @@ def surch_org(organization_name,
             search_list=list(string),
             print_result=print_result,
             organization=organization_name,
-            cloned_repos_dir=cloned_repos_path)
+            cloned_repos_dir=cloned_repos_dir)
     except SurchError as ex:
         sys.exit(ex)
 
 
 @main.command(name='user')
-@click.argument('organization_name', required=False)
-@click.option('-c', '--config-file', default=None,
-              type=click.Path(exists=False, file_okay=True),
-              help='A path to a Surch config file')
-@click.option('-s', '--string', multiple=True, required=False,
-              help='String you would like to search for. '
-              'This can be passed multiple times.')
-@click.option('--exclude-repo', default='', multiple=True,
-              help='Repo you would like to exclude. '
-              'This can be passed multiple times.')
-@click.option('--include-repo', default='', multiple=True,
-              help='Repo you would like to include. '
-              'This can be passed multiple times.')
-@click.option('-U', '--user', default=None,
-              help='Git user name for authenticate.')
-@click.option('-P', '--password', default=None, required=False,
-              help='Git user password for authenticate')
-@click.option('-p', '--cloned-repos-path', default=constants.CLONED_REPOS_PATH,
-              help='Directory to contain all cloned repositories. '
-              '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
-@click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this directory. '
-              '[defaults to {0}]'.format(constants.RESULTS_PATH))
-@click.option('-R', '--remove', default=False, is_flag=True,
-              help='Remove clone repo directory. '
-                   'When used -p and -l can\'t be same folder')
-@click.option('--pager', multiple=True, default=[],
-              help='pager plugins(pagerduty).')
-@click.option('--source', multiple=True, default=[],
-              help='source plugins(Vault).')
-@click.option('--print-result', default=False, is_flag=True)
-@click.option('-v', '--verbose', default=False, is_flag=True)
-def surch_user(organization_name,
+@click.argument('user-name', required=False)
+@config_file
+@search_string
+@cloned_repos_path
+@log_path
+@remove_clone
+@exclude_repo
+@include_repo
+@github_user
+@github_password
+@pager
+@source
+@printout
+@verbose
+def surch_user(user_name,
                config_file,
                string,
                include_repo,
@@ -191,7 +226,7 @@ def surch_user(organization_name,
                user,
                remove,
                password,
-               cloned_repos_path,
+               cloned_repos_dir,
                log,
                print_result,
                source,
@@ -213,7 +248,7 @@ def surch_user(organization_name,
             remove_cloned_dir=remove,
             search_list=list(string),
             print_result=print_result,
-            organization=organization_name,
-            cloned_repos_dir=cloned_repos_path)
+            organization=user_name,
+            cloned_repos_dir=cloned_repos_dir)
     except SurchError as ex:
         sys.exit(ex)

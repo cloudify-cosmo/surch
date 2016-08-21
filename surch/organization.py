@@ -60,16 +60,16 @@ class Organization(object):
         :param remove_cloned_dir:
                         this flag for removing the clone directory (boolean)
         """
-        utils.check_if_executable_exists_else_exit('git')
+        utils.assert_executable_exists('git')
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         if repos_to_skip and repos_to_check:
-            raise (
-                'You can\'t both include and exclude repositories.')
+            raise SurchError(
+                "You can't both include and exclude repositories")
         if not git_user or not git_password:
             self.logger.warn(
                 'Choosing not to provide GitHub credentials limits '
-                'requests to GitHub to 60/h. This might affect cloning.')
+                'requests to GitHub to 60/h. This might affect cloning')
             self.git_credentials = False
         else:
             self.git_credentials = (git_user, git_password)
@@ -128,7 +128,7 @@ class Organization(object):
         if response.status_code == requests.codes.NOT_FOUND:
             raise SurchError(
                 'The organization or user {0} could not be found. '
-                'Please make sure you use the correct type (org/user).'.format(
+                'Please make sure you use the correct type (org/user)'.format(
                     self.organization))
         return response.json()
 
@@ -184,7 +184,7 @@ class Organization(object):
         """
         if repos_to_exclude and repos_to_include:
             raise SurchError(
-                'You can not both include and exclude repositories.')
+                'You can not both include and exclude repositories')
         repo_url_list = []
         if repos_to_include:
             for repo_name in repos_to_include:
@@ -210,7 +210,7 @@ class Organization(object):
             search_list=search_list)
         if len(search_list) == 0:
             raise SurchError(
-                'You must supply at least one string to search for.')
+                'You must supply at least one string to search for')
         repos_data = self._get_all_repos_list()
         if not os.path.isdir(self.cloned_repos_dir):
             os.makedirs(self.cloned_repos_dir)
@@ -260,7 +260,7 @@ def search(organization,
     """API method init organization instance and search strings
     """
 
-    utils.check_if_executable_exists_else_exit('git')
+    utils.assert_executable_exists('git')
     pager = handler.plugins_handle(
         config_file=config_file, plugins_list=pager)
     source = handler.plugins_handle(
@@ -278,7 +278,6 @@ def search(organization,
             print_result=print_result,
             is_organization=is_organization,
             remove_cloned_dir=remove_cloned_dir)
-
     else:
         org = Organization(
             pager=pager,

@@ -15,8 +15,8 @@
 
 import os
 import json
-import mock
 
+import mock
 import testtools
 import click.testing as clicktest
 
@@ -26,6 +26,10 @@ from .. import surch
 from .. import constants
 from .. import organization
 from ..exceptions import SurchError
+
+
+PATH = os.path.abspath(__file__).rsplit('/', 1)[0]
+TEST_PATH = os.path.join(PATH, 'test')
 
 
 def _invoke_click(func, args=None, opts=None):
@@ -43,14 +47,20 @@ def _invoke_click(func, args=None, opts=None):
 
 def count_dicts_in_results_file(file_path):
     try:
-        with open(file_path, 'r') as results_file:
+        with open(file_path) as results_file:
             return len(json.load(results_file)['_default'])
     except:
         return 0
 
-path = os.path.abspath(__file__)
-path = path.rsplit('/', 1)[0]
-test_path = os.path.join(path, 'test')
+
+class SurchTestCase(testtools.TestCase):
+    def setUp(self):
+        super(SurchTestCase, self).setUp()
+        constants.DOT_SURCH = tempfile.mkdtemp()
+
+    def tearDown(self):
+        super(SurchTestCase, self).tearDown()
+        shutil.rmtree(constants.HOMEDIR)
 
 
 class TestRepo(testtools.TestCase):
@@ -58,54 +68,55 @@ class TestRepo(testtools.TestCase):
         self.args = 'https://github.com/cloudify-cosmo/surch.git'
         opts = {
             '-s': 'import',
-            '-p': os.path.join(test_path, 'repo/clones'),
-            '-l': os.path.join(test_path, 'repo'),
+            '-p': os.path.join(TEST_PATH, 'repo/clones'),
+            '-l': os.path.join(TEST_PATH, 'repo'),
             '-R': None}
         _invoke_click('surch_repo', [self.args], opts)
-        result_path = os.path.join(test_path, 'repo', 'results.json')
+        result_path = os.path.join(TEST_PATH, 'repo', 'results.json')
         dicts_num = count_dicts_in_results_file(result_path)
         self.assertTrue(dicts_num > 0)
         self.assertFalse(os.path.isdir(
-            '{0}/repo/clones/surch'.format(test_path)))
-        utils.remove_repos_folder(test_path)
+            '{0}/repo/clones/surch'.format(TEST_PATH)))
+        utils.remove_repos_folder(TEST_PATH)
 
     def test_surch_repo_command_with_config_and_found_results(self):
-        config_file_path = os.path.join(path, 'config/repo-config.yaml')
+        config_file_path = os.path.join(PATH, 'config/repo-config.yaml')
         self.args = ' '
         opts = {
             '-c': config_file_path,
             '-v': None}
         _invoke_click('surch_repo', [self.args], opts)
-        result_path = os.path.join(constants.RESULTS_PATH,
-                                   'cloudify-cosmo/results.json')
+        result_path = os.path.join(
+            constants.RESULTS_PATH, 'cloudify-cosmo/results.json')
         dicts_num = count_dicts_in_results_file(result_path)
         self.assertTrue(dicts_num > 0)
-        utils.remove_repos_folder(constants.DEFAULT_PATH)
+        utils.remove_repos_folder(constants.DOT_SURCH)
 
     def test_surch_repo_command_with_arguments_found_results_and_remove(self):
-        result_path = os.path.join(test_path, 'results.json')
-        repo_path = os.path.join(test_path, 'clones/surch')
+        result_path = os.path.join(TEST_PATH, 'results.json')
+        repo_path = os.path.join(TEST_PATH, 'clones/surch')
         self.args = 'https://github.com/cloudify-cosmo/surch.git'
         opts = {
             '-s': 'import',
-            '-p': os.path.join(test_path, 'clones'),
-            '-l': test_path,
+            '-p': os.path.join(TEST_PATH, 'clones'),
+            '-l': TEST_PATH,
             '-R': None}
         _invoke_click('surch_repo', [self.args], opts)
         dicts_num = count_dicts_in_results_file(result_path)
         self.assertTrue(dicts_num > 0)
         self.assertFalse(os.path.isdir(repo_path))
-        utils.remove_repos_folder(test_path)
+        utils.remove_repos_folder(TEST_PATH)
 
     def test_surch_repo_command_with_arguments_without_string_opt(self):
         self.args = 'https://github.com/cloudify-cosmo/surch.git'
         opts = {
-            '-p': test_path,
-            '-l': test_path,
-            '-v': None}
+            '-p': TEST_PATH,
+            '-l': TEST_PATH,
+            '-v': None
+        }
         result = _invoke_click('surch_repo', [self.args], opts)
         self.assertEqual(1, result.exit_code)
-        utils.remove_repos_folder(test_path)
+        utils.remove_repos_folder(TEST_PATH)
 
     def test_create_search_strings(self):
         repository = repo.Repo(
@@ -143,7 +154,7 @@ class TestRepo(testtools.TestCase):
             repo_class._clone_or_pull()
         commits = repo_class._get_all_commits()
         self.assertTrue(commits > 0)
-        utils.remove_repos_folder(constants.DEFAULT_PATH)
+        utils.remove_repos_folder(constants.DOT_SURCH)
 
     @mock.patch.object(repo.Repo, '_get_user_details',
                        mock.Mock(return_value=('surch', 'surch', 'surch')))
@@ -162,7 +173,7 @@ class TestRepo(testtools.TestCase):
 
 class TestUtils(testtools.TestCase):
     def test_read_config_file(self):
-        config_file_path = os.path.join(path, 'config/repo-config.yaml')
+        config_file_path = os.path.join(PATH, 'config/repo-config.yaml')
         config_file = utils.read_config_file(config_file_path)
         if 'organization_flag' and 'print_result' in config_file:
             success = True
@@ -171,10 +182,10 @@ class TestUtils(testtools.TestCase):
         self.assertTrue(success)
 
     def test_remove_folder(self):
-        if not os.path.isdir(test_path):
-            os.makedirs(test_path)
-        utils.remove_repos_folder(test_path)
-        self.assertFalse(os.path.isdir(test_path))
+        if not os.path.isdir(TEST_PATH):
+            os.makedirs(TEST_PATH)
+        utils.remove_repos_folder(TEST_PATH)
+        self.assertFalse(os.path.isdir(TEST_PATH))
 
     def test_find_string_between_strings(self):
         string = utils.find_string_between_strings('bosurchom', 'bo', 'om')
@@ -182,20 +193,22 @@ class TestUtils(testtools.TestCase):
 
     @mock.patch.object(utils, 'str', mock.Mock(return_value='surch'))
     def test_handle_results_file(self):
-        test_file_path = '{0}.json'.format(test_path)
+        test_file_path = '{0}.json'.format(TEST_PATH)
         with open(test_file_path, 'a') as file:
             file.write('surch')
         utils.handle_results_file(test_file_path, False)
-        success = os.path.isfile('{0}.json.surch'.format(test_path))
+        success = os.path.isfile('{0}.json.surch'.format(TEST_PATH))
         if success:
-            os.remove('{0}.json.surch'.format(test_path))
+            os.remove('{0}.json.surch'.format(TEST_PATH))
         self.assertTrue(success)
 
     def test_check_if_executable_exists_else_exit(self):
         result = self.assertRaises(
-            SurchError, utils.check_if_executable_exists_else_exit,
+            SurchError, utils.assert_executable_exists,
             executable='executable_not_exist')
-        self.assertEqual('1', str(result))
+        self.assertEqual(
+            'executable_not_exist executable not found and is required',
+            str(result))
 
 
 class TestOrg(testtools.TestCase):
@@ -204,33 +217,33 @@ class TestOrg(testtools.TestCase):
         self.args = 'cloudify-cosmo'
         opts = {
             '-s': 'import',
-            '-p': os.path.join(test_path, 'cloudify-cosmo/clones'),
-            '-l': os.path.join(test_path, 'cloudify-cosmo'),
+            '-p': os.path.join(TEST_PATH, 'cloudify-cosmo/clones'),
+            '-l': os.path.join(TEST_PATH, 'cloudify-cosmo'),
             '--include-repo=': 'surch',
             '-v': None,
             '-R': None}
         result = _invoke_click('surch_org', [self.args], opts)
-        result_path = os.path.join(test_path, 'cloudify-cosmo/results.json')
+        result_path = os.path.join(TEST_PATH, 'cloudify-cosmo/results.json')
         self.assertEqual(result.exit_code, 0)
         dicts_num = count_dicts_in_results_file(result_path)
         self.assertTrue(dicts_num > 0)
         self.assertFalse(os.path.isdir(
-            '{0}cloudify-cosmo/clones/surch'.format(test_path)))
-        utils.remove_repos_folder(test_path)
+            '{0}cloudify-cosmo/clones/surch'.format(TEST_PATH)))
+        utils.remove_repos_folder(TEST_PATH)
 
     def test_surch_org_command_with_user_arguments(self):
         self.args = 'Havivw'
         opts = {
             '-s': 'import',
-            '-p': test_path,
-            '-l': os.path.join(test_path, 'cloudify-cosmo'),
+            '-p': TEST_PATH,
+            '-l': os.path.join(TEST_PATH, 'cloudify-cosmo'),
             '--include-repo=': 'surch',
             '-v': None}
         result = _invoke_click('surch_org', [self.args], opts)
         self.assertEqual(1, result.exit_code)
 
     def test_surch_org_command_with_config_no_auth_and_found_results(self):
-        config_file_path = os.path.join(path, 'config/org-config_no_auth.yaml')
+        config_file_path = os.path.join(PATH, 'config/org-config_no_auth.yaml')
         self.args = ' '
         opts = {
             '-c': config_file_path,
@@ -241,11 +254,11 @@ class TestOrg(testtools.TestCase):
                                    'cloudify-cosmo/results.json')
         dicts_num = count_dicts_in_results_file(result_path)
         self.assertTrue(dicts_num > 0)
-        utils.remove_repos_folder(constants.DEFAULT_PATH)
+        utils.remove_repos_folder(constants.DOT_SURCH)
 
     def test_surch_user_command_with_arguments_and_found_results(self):
-        test_path = os.path.join(path, 'test/Havivw')
-        result_path = os.path.join(path, 'test/Havivw/results.json')
+        test_path = os.path.join(PATH, 'test/Havivw')
+        result_path = os.path.join(PATH, 'test/Havivw/results.json')
         self.args = 'Havivw'
         opts = {
             '-s': 'import',
@@ -260,19 +273,20 @@ class TestOrg(testtools.TestCase):
         utils.remove_repos_folder(test_path)
 
     def test_surch_user_command_with_config_no_auth_and_found_results(self):
-        config_file_path = os.path.join(path,
+        config_file_path = os.path.join(PATH,
                                         'config/user-config_no_auth.yaml')
         self.args = ' '
         opts = {
             '-c': config_file_path,
-            '-v': None}
+            '-v': None
+        }
         _invoke_click('surch_user', [self.args], opts)
-        result_path = os.path.join(constants.RESULTS_PATH,
-                                   'Havivw/results.json')
+        result_path = os.path.join(
+            constants.RESULTS_PATH, 'Havivw/results.json')
         dicts_num = count_dicts_in_results_file(result_path)
         success = dicts_num > 0
         self.assertTrue(success)
-        utils.remove_repos_folder(constants.DEFAULT_PATH)
+        utils.remove_repos_folder(constants.DOT_SURCH)
 
     def test_surch_org_command_with_include_exclude_repo(self):
         self.args = 'cloudify-cosmo'
@@ -322,4 +336,6 @@ class TestOrg(testtools.TestCase):
             SurchError, org.get_repo_include_list,
             all_repos=all_repo, repos_to_exclude=repos_to_exclude,
             repos_to_include=repos_to_include)
-        self.assertEqual('1', str(result))
+        self.assertEqual(
+            'You can not both include and exclude repositories',
+            str(result))

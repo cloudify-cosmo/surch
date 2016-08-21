@@ -112,7 +112,7 @@ def find_string_between_strings(string, first, last):
         return ' '
 
 
-def check_if_executable_exists_else_exit(executable):
+def assert_executable_exists(executable):
     if not find_executable(executable):
         raise SurchError(
             '{0} executable not found and is required'.format(executable))

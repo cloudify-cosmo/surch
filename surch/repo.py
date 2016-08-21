@@ -53,7 +53,7 @@ class Repo(object):
                         this flag for removing the clone directory (boolean)
         """
 
-        utils.check_if_executable_exists_else_exit('git')
+        utils.assert_executable_exists('git')
 
         self.logger = utils.logger
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -100,7 +100,6 @@ class Repo(object):
         """Clone the repo if it doesn't exist in the cloned_repo_dir.
         Otherwise, pull it.
         """
-
         def run(command):
             try:
                 proc = subprocess.Popen(
@@ -130,7 +129,6 @@ class Repo(object):
     def _create_search_string(self, search_list):
         """Create part of the grep command from search list.
         """
-
         self.logger.debug('Generating git grep-able search string...')
         unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
         search_string = ' --or -e '.join(unglobbed_search_list)
@@ -232,7 +230,7 @@ class Repo(object):
         search_list = search_list or self.search_list
         if len(search_list) == 0:
             raise SurchError(
-                'You must supply at least one string to search for.')
+                'You must supply at least one string to search for')
 
         start = time()
         self._clone_or_pull()
@@ -246,7 +244,7 @@ class Repo(object):
         total_time = utils.convert_to_seconds(start, time())
         if self.error_summary:
             utils.print_errors_summary(self.error_summary)
-        self.logger.info('Found {0} results in {1} commits.'.format(
+        self.logger.info('Found {0} results in {1} commits'.format(
             self.result_count, self.commits))
         self.logger.debug('Total time: {0} seconds'.format(total_time))
         if 'pagerduty' in self.pager:
@@ -270,7 +268,7 @@ def search(repo_url,
     """API method init repo instance and search strings
     """
 
-    utils.check_if_executable_exists_else_exit('git')
+    utils.assert_executable_exists('git')
     source = handler.plugins_handle(
         config_file=config_file, plugins_list=source)
 

@@ -1,9 +1,8 @@
 import os
 
-HOME_DIR = os.path.expanduser("~")
-DEFAULT_PATH = os.path.join(HOME_DIR, '.surch')
-CLONED_REPOS_PATH = os.path.join(DEFAULT_PATH, 'clones')
-RESULTS_PATH = os.path.join(DEFAULT_PATH, 'results')
+DOT_SURCH = os.path.join(os.path.expanduser("~"), '.surch')
+CLONED_REPOS_PATH = os.path.join(DOT_SURCH, 'clones')
+RESULTS_PATH = os.path.join(DOT_SURCH, 'results')
 
 GITHUB_API_URL = 'https://api.github.com/{0}/{1}'
 GITHUB_REPO_DETAILS_API_URL = \
