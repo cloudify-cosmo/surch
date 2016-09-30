@@ -40,7 +40,7 @@ search_string = click.option(
     '--string',
     multiple=True,
     help='String you would like to search for. '
-    'This can be passed multiple times.')
+    'This can be passed multiple times')
 
 cloned_repos_path = click.option(
     '-p',
@@ -85,7 +85,7 @@ exclude_repo = click.option(
     default='',
     multiple=True,
     help='Repo you would like to exclude. '
-    'This can be passed multiple times.')
+    'This can be passed multiple times')
 
 include_repo = click.option(
     '--include-repo',
@@ -98,13 +98,13 @@ github_user = click.option(
     '-U',
     '--user',
     default=None,
-    help='Git user name for authenticate.')
+    help='GitHub username')
 
 github_password = click.option(
     '-P',
     '--password',
     default=None,
-    help='Git user password for authenticate')
+    help='GitHub password')
 
 
 @click.group(context_settings=CLICK_CONTEXT_SETTINGS)
@@ -203,7 +203,7 @@ def surch_org(organization_name,
 
 
 @main.command(name='user')
-@click.argument('user-name', required=False)
+@click.argument('username', required=False)
 @config_file
 @search_string
 @cloned_repos_path

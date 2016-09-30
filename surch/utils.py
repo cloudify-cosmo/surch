@@ -82,23 +82,6 @@ def read_config_file(config_file,
     return conf_vars
 
 
-def remove_repos_folder(path=None):
-    """Print log and removing directory"""
-    logger.info('Removing: {0}...'.format(path))
-    shutil.rmtree(path)
-
-
-def print_errors_summary(error_summary):
-    logger.info('Summary of all errors: \n{0}'.format(
-        '\n'.join(error_summary)))
-
-
-def print_result_file(result_file=None):
-    with open(result_file) as results_file:
-        results = results_file.read()
-    logger.info(results)
-
-
 def convert_to_seconds(start, end):
     return str(round(end - start, 3))
 

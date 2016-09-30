@@ -232,10 +232,6 @@ class Organization(object):
                 from_organization=True,
                 results_dir=self.results_dir,
                 cloned_repo_dir=self.cloned_repos_dir)
-        if self.print_result:
-            utils.print_result_file(self.results_file_path)
-        if self.remove_cloned_dir:
-            utils.remove_repos_folder(path=self.cloned_repos_dir)
         if 'pagerduty' in self.pager:
             handler.pagerduty_trigger(config_file=self.config_file,
                                       log=self.results_file_path)
@@ -259,7 +255,6 @@ def search(organization,
            **kwargs):
     """API method init organization instance and search strings
     """
-
     utils.assert_executable_exists('git')
     pager = handler.plugins_handle(
         config_file=config_file, plugins_list=pager)
@@ -268,30 +263,20 @@ def search(organization,
 
     search_list = handler.merge_all_search_list(
         source=source, config_file=config_file, search_list=search_list)
-    if config_file:
-        print(search_list)
-        org = Organization.init_with_config_file(
-            pager=pager,
-            verbose=verbose,
-            config_file=config_file,
-            search_list=search_list,
-            print_result=print_result,
-            is_organization=is_organization,
-            remove_cloned_dir=remove_cloned_dir)
-    else:
-        org = Organization(
-            pager=pager,
-            verbose=verbose,
-            git_user=git_user,
-            results_dir=results_dir,
-            git_password=git_password,
-            search_list=search_list,
-            organization=organization,
-            print_result=print_result,
-            repos_to_skip=repos_to_skip,
-            repos_to_check=repos_to_check,
-            is_organization=is_organization,
-            cloned_repos_dir=cloned_repos_dir,
-            remove_cloned_dir=remove_cloned_dir)
+
+    org = Organization(
+        pager=pager,
+        verbose=verbose,
+        git_user=git_user,
+        results_dir=results_dir,
+        git_password=git_password,
+        search_list=search_list,
+        organization=organization,
+        print_result=print_result,
+        repos_to_skip=repos_to_skip,
+        repos_to_check=repos_to_check,
+        is_organization=is_organization,
+        cloned_repos_dir=cloned_repos_dir,
+        remove_cloned_dir=remove_cloned_dir)
 
     org.search(search_list=search_list)

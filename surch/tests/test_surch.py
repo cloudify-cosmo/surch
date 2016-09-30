@@ -13,8 +13,11 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+import sh
 import os
 import json
+import shutil
+import tempfile
 
 import mock
 import testtools
@@ -53,31 +56,55 @@ def count_dicts_in_results_file(file_path):
         return 0
 
 
-class SurchTestCase(testtools.TestCase):
-    def setUp(self):
-        super(SurchTestCase, self).setUp()
-        constants.DOT_SURCH = tempfile.mkdtemp()
+# class SurchTestCase(testtools.TestCase):
+#     def setUp(self):
+#         super(SurchTestCase, self).setUp()
+#         constants.DOT_SURCH = tempfile.mkdtemp()
 
-    def tearDown(self):
-        super(SurchTestCase, self).tearDown()
-        shutil.rmtree(constants.HOMEDIR)
+#     def tearDown(self):
+#         super(SurchTestCase, self).tearDown()
+#         shutil.rmtree(constants.DOT_SURCH)
 
 
 class TestRepo(testtools.TestCase):
+    def setUp(self):
+        super(TestRepo, self).setUp()
+        self.repo_dir = tempfile.mkdtemp(prefix='repo-')
+        self.clone_dir = tempfile.mkdtemp(prefix='clone-')
+
+        shutil.rmtree(self.repo_dir)
+        sh.git.init(self.repo_dir)
+        previous_dir = os.getcwd()
+        os.chdir(self.repo_dir)
+        sh.git.remote.add.origin('http://x.git')
+        fd, the_file = tempfile.mkstemp(dir=self.repo_dir)
+        with open(the_file, 'w') as f:
+            f.write('import')
+        os.close(fd)
+        sh.git.add(the_file)
+        sh.git.commit('-am', 'w00t')
+        os.chdir(previous_dir)
+
+    def tearDown(self):
+        super(TestRepo, self).tearDown()
+        # shutil.rmtree(constants.DOT_SURCH)
+        shutil.rmtree(self.repo_dir)
+        shutil.rmtree(self.clone_dir)
+
     def test_surch_repo_command_with_arguments_and_found_results(self):
         self.args = 'https://github.com/cloudify-cosmo/surch.git'
         opts = {
             '-s': 'import',
-            '-p': os.path.join(TEST_PATH, 'repo/clones'),
-            '-l': os.path.join(TEST_PATH, 'repo'),
-            '-R': None}
-        _invoke_click('surch_repo', [self.args], opts)
-        result_path = os.path.join(TEST_PATH, 'repo', 'results.json')
-        dicts_num = count_dicts_in_results_file(result_path)
+            '-p': self.clone_dir,
+            '-l': self.clone_dir
+        }
+        _invoke_click('surch_repo', [self.repo_dir], opts)
+        results_file_path = os.path.join(self.clone_dir, 'results.json')
+        dicts_num = count_dicts_in_results_file(results_file_path)
         self.assertTrue(dicts_num > 0)
-        self.assertFalse(os.path.isdir(
-            '{0}/repo/clones/surch'.format(TEST_PATH)))
-        utils.remove_repos_folder(TEST_PATH)
+        with open(results_file_path) as results_file:
+            results = (results_file.read())
+        # utils.remove_repos_folder(TEST_PATH)
 
     def test_surch_repo_command_with_config_and_found_results(self):
         config_file_path = os.path.join(PATH, 'config/repo-config.yaml')
@@ -221,7 +248,8 @@ class TestOrg(testtools.TestCase):
             '-l': os.path.join(TEST_PATH, 'cloudify-cosmo'),
             '--include-repo=': 'surch',
             '-v': None,
-            '-R': None}
+            '-R': None
+        }
         result = _invoke_click('surch_org', [self.args], opts)
         result_path = os.path.join(TEST_PATH, 'cloudify-cosmo/results.json')
         self.assertEqual(result.exit_code, 0)
