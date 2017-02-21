@@ -13,6 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+from pprint import pprint
+
 import os
 import logging
 import subprocess
@@ -25,254 +27,204 @@ from .plugins import handler
 from . import utils, constants
 from .exceptions import SurchError
 
-
-logger = utils.logger
-
-# class Repo(object):
-#     def __init__(self,
-#                  repo_url,
-#                  search_list,
-#                  pager=None,
-#                  verbose=False,
-#                  config_file=None,
-#                  results_dir=None,
-#                  print_result=False,
-#                  cloned_repo_dir=None,
-#                  consolidate_log=False,
-#                  remove_cloned_dir=False,
-#                  **kwargs):
-#         """Surch repo instance init
-
-#         :param repo_url: get http / ssh repository for cloning (string)
-#         :param search_list: list of string we want to search (list)
-#         :param verbose: log level (boolean)
-#         :param results_dir: path to result file (string)
-#         :param print_result: this flag print result file in the end (boolean)
-#         :param cloned_repo_dir: path for cloned repo (string)
-#         :param consolidate_log:
-#                         this flag decide if save the old result file (boolean)
-#         :param remove_cloned_dir:
-#                         this flag for removing the clone directory (boolean)
-#         """
-
-#         utils.assert_executable_exists('git')
-
-#         self.logger = utils.logger
-#         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-
-#         self.config_file = config_file
-#         self.print_result = print_result
-#         self.remove_cloned_dir = remove_cloned_dir
-#         self.repo_url = repo_url
-#         self.organization = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
-#         self.repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-#         self.cloned_repo_dir = cloned_repo_dir or os.path.join(
-#             self.organization, constants.CLONED_REPOS_PATH)
-#         self.repo_path = os.path.join(self.cloned_repo_dir, self.repo_name)
-#         self.quiet_git = '--quiet' if not verbose else ''
-#         self.verbose = verbose
-#         self.pager = handler.plugins_handle(
-#             config_file=self.config_file, plugins_list=pager)
-#         results_dir = \
-#             os.path.join(results_dir, 'results.json') if results_dir else None
-#         self.results_file_path = results_dir or os.path.join(
-#             constants.RESULTS_PATH, self.organization, 'results.json')
-#         utils.handle_results_file(self.results_file_path, consolidate_log)
-
-#         self.error_summary = []
-#         self.result_count = 0
+# logger = utils.logger
 
 
-def _get_repo_name(repo):
-    if '://' in repo:
-        return repo.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-    elif os.path.isdir(repo):
-        return os.path.split(os.path.dirname(os.path.abspath(repo)))[-1]
+def _get_repo_and_organization_name(repo_url):
+    if '://' in repo_url:
+        organization_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
+        repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+        return repo_name.encode('ascii'), organization_name.encode('ascii')
+
+
+def _run_command_without_output(command):
+    try:
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+        proc.stdout, proc.stderr = proc.communicate()
+        # if verbose:
+        #     pass
+        #     # logger.debug(proc.stdout)
+    except subprocess.CalledProcessError as git_error:
+        err = 'Failed execute {0} on repo {1} ({2})'.format(command,
+                                                            repo_name,
+                                                            git_error)
+        # logger.error(err)
+
+
+def _order_branches_list(branches_names):
+    branches = []
+    for name in branches_names:
+        name = name.replace("  ", "").replace('* ', "")
+        branches.append(name)
+    return branches
 
 
 @retrying.retry(stop_max_attempt_number=3)
-def _get_repo(source, verbose):
+def _get_repo(repo_url, cloned_repo_dir):
     """Clone the repo if it doesn't exist in the cloned_repo_dir.
     Otherwise, pull it.
     """
-    repo_name = _get_repo_name(source)
 
-    def run(command):
-        try:
-            proc = subprocess.Popen(
-                command, stdout=subprocess.PIPE, shell=True)
-            proc.stdout, proc.stderr = proc.communicate()
-            if verbose:
-                logger.debug(proc.stdout)
-        except subprocess.CalledProcessError as git_error:
-            err = 'Failed execute {0} on repo {1} ({1})'.format(
-                command, repo_name, git_error)
-            logger.error(err)
-
-    if not os.path.isdir(self.cloned_repo_dir):
-        os.makedirs(self.cloned_repo_dir)
-    if os.path.isdir(self.repo_path):
-        logger.debug('Local repo already exists at: {0}'.format(
-            self.repo_path))
-        logger.info('Pulling repo: {0}...'.format(self.repo_name))
-        run('git -C {0} pull {1}'.format(self.repo_path, self.quiet_git))
+    if os.path.isdir(cloned_repo_dir):
+        # logger.debug('Local repo already exists at: {0}'.format( repo_path))
+        # logger.info('Pulling repo: {0}...'.format(repo_name))
+        git_pull_command = 'git -C {0} pull -q'.format(cloned_repo_dir)
+        _run_command_without_output(git_pull_command)
     else:
-        logger.info('Cloning repo {0} from org {1} to {2}...'.format(
-            self.repo_name, self.organization, self.repo_path))
-        run('git clone {0} {1} {2}'.format(
-            self.quiet_git, self.repo_url, self.repo_path))
+        # logger.info('Cloning repo {0} from org {1} to {2}...'.format(
+        #     repo_name, organization, repo_path))
+        git_clone_command = 'git clone -q {0} {1}'.format(repo_url,
+                                                          cloned_repo_dir)
+        _run_command_without_output(git_clone_command)
 
 
-def _get_all_commits(repo):
-    """Get the sha-id of the commit
-    """
-    logger.debug('Retrieving list of commits...')
-    try:
-        commits = subprocess.check_output(
-            'git -C {0} rev-list --all'.format(repo), shell=True)
-        return commits.splitlines()
-    except subprocess.CalledProcessError:
-        return []
+def _get_all_commits_from_all_branches(cloned_repo_dir):
+    commit_list = []
+    git_get_branches_command = "git -C {0} branch -a".format(cloned_repo_dir)
+    branches = subprocess.check_output(git_get_branches_command,
+                                       shell=True).splitlines()
+    for branch in branches:
+        if '/' in str(branch):
+            name = str(branch).rsplit('/', 1)[-1]
+            git_checkout_command = "git -C {0} checkout {1} -q".format(
+                cloned_repo_dir, name)
+
+            _run_command_without_output(git_checkout_command)
+
+            git_get_commits_from_branch = "git -C {0} " \
+                                          "rev-list origin/{1}".format(
+                cloned_repo_dir, name)
+
+            commits_per_branch = subprocess.check_output(
+                git_get_commits_from_branch, shell=True).splitlines()
+
+            for commit_per_branch in commits_per_branch:
+                commit_list.append(commit_per_branch)
+            # lgr.info('Found {0} commits in {1}...'.format(
+            #     len(commit_list), repo_name))
+            commits = len(commit_list)
+    return list(set(commit_list))
 
 
 def _create_search_string(search_list):
     """Create part of the grep command from search list.
     """
-    logger.debug('Generating git grep-able search string...')
+    # logger.debug('Generating git grep-able search string...')
     unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
     search_string = ' --or -e '.join(unglobbed_search_list)
     return search_string
 
 
-def _search(search_list, commits):
+def _search_commit(cloned_repo_dir, commit, search_string):
+    """Run git grep on the commit
+    """
+    try:
+        matched_files = subprocess.check_output(
+            'git -C {0} grep -c -e {1} {2}'.format(cloned_repo_dir,
+                                                   search_string,
+                                                   commit),
+            shell=True).splitlines()
+        branches_names = subprocess.check_output(
+            'git  -C {0} branch --contains {1}'.format(cloned_repo_dir,
+                                                       commit),
+            shell=True).splitlines()
+
+        return {'matched_files': matched_files,
+                'branches_names': branches_names}
+    except subprocess.CalledProcessError:
+        return '', ''
+
+
+def _search(search_list, commits, cloned_repo_dir):
     """Create list of all commits which contains one of the strings
     we're searching for.
     """
     search_string = _create_search_string(list(search_list))
     matching_commits = []
-    logger.info('Scanning repo {0} for {1} string(s)...'.format(
-        self.repo_name, len(search_list)))
+    # logger.info('Scanning repo {0} for {1} string(s)...'.format(
+    #     repo_name, len(search_list)))
     for commit in commits:
-        matching_commits.append(self._search_commit(commit, search_string))
+        matched_files_and_branches = _search_commit(cloned_repo_dir,
+                                                  commit,
+                                                  search_string)
+        matching_commits.append(matched_files_and_branches)
+
     return matching_commits
 
-def _search_commit(self, commit, search_string):
-    """Run git grep on the commit
-    """
-    try:
-        matched_files = subprocess.check_output(
-            'git -C {0} grep -l -e {1} {2}'.format(
-                self.repo_path, search_string, commit), shell=True)
-        return matched_files.splitlines()
-    except subprocess.CalledProcessError:
-        return []
 
-def _write_results(self, results):
+def _write_results(results, cloned_repo_dir, results_file_path):
     """Write the result to DB
     """
+    result_count = 0
+
     db = TinyDB(
-        self.results_file_path,
+        results_file_path,
         indent=4,
         sort_keys=True,
         separators=(',', ': '))
 
-    logger.info('Writing results to: {0}...'.format(
-        self.results_file_path))
-    for matched_files in results:
-        for match in matched_files:
-            try:
-                commit_sha, filepath = match.rsplit(':', 1)
+    # logger.info('Writing results to: {0}...'.format(
+    #     results_file_path))
+    for result in results:
+        # pprint(result['matched_files'])
+        try:
+            for match in list(result['matched_files']):
+                branches_names = _order_branches_list(result['branches_names'])
+                commit_sha, filepath, line_num = match.rsplit(':')
                 username, email, commit_time = \
-                    self._get_user_details(commit_sha)
+                    _get_user_details(cloned_repo_dir, commit_sha)
                 result = dict(
                     email=email,
                     filepath=filepath,
                     username=username,
                     commit_sha=commit_sha,
                     commit_time=commit_time,
-                    repository_name=self.repo_name,
-                    organization_name=self.organization,
+                    branches_names=branches_names,
+                    repository_name=repo_name,
+                    organization_name=organization,
                     blob_url=constants.GITHUB_BLOB_URL.format(
-                        self.organization,
-                        self.repo_name,
-                        commit_sha, filepath)
-                )
-                self.result_count += 1
+                        organization,
+                        repo_name,
+                        commit_sha, filepath))
+                result_count += 1
                 db.insert(result)
-            except IndexError:
-                # The structre of the output is
-                # sha:filename
-                # sha:filename
-                # filename
-                # None
-                # We need both sha and filename and when we don't
-                # get them we skip to the next
-                pass
+        except (IndexError, TypeError):
+            # The structre of the output is
+            # sha:filename
+            # sha:filename
+            # filename
+            # None
+            # We need both sha and filename and when we don't get them
+            # we skip to the next var
+            pass
+    print result_count
 
 
-def _get_user_details(sha):
-    """Return user_name, user_email, commit_time
+def _get_user_details(cloned_repo_dir, sha):
+    """ Return user_name, user_email, commit_time
     per commit before write to DB
     """
     details = subprocess.check_output(
-        "git -C {0} show -s  {1}".format(self.repo_path, sha), shell=True)
+        "git -C {0} show -s  {1}".format(cloned_repo_dir, sha), shell=True)
     name = utils.find_string_between_strings(details, 'Author: ', ' <')
     email = utils.find_string_between_strings(details, '<', '>')
-    commit_time = utils.find_string_between_strings(
-        details, 'Date:   ', '+').strip()
+    commit_time = utils.find_string_between_strings(details, 'Date:   ',
+                                                    '+').strip()
     return name, email, commit_time
 
 
-def search(source,
-           pager=None,
-           source=None,
-           verbose=False,
-           search_list=None,
-           config_file=None,
-           results_dir=None,
-           print_result=False,
-           cloned_repo_dir=None,
-           consolidate_log=False,
-           from_organization=False,
-           remove_cloned_dir=False,
+def search(repo_url,
+           cloned_repo_dir,
+           search_list,
+           results_file_path,
            **kwargs):
     """API method init repo instance and search strings
     """
-    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-
-    utils.assert_executable_exists('git')
-
-    source = handler.plugins_handle(
-        config_file=config_file, plugins_list=source)
-
-    if not from_organization:
-        search_list = handler.merge_all_search_list(
-            source=source,
-            config_file=config_file,
-            search_list=search_list)
-
-    if not isinstance(search_list, list):
-        raise SurchError('`search_list` must be of type list')
-    if len(search_list) == 0:
-        raise SurchError(
-            'You must supply at least one string to search for')
-
-    if not os.path.isdir(constants.DOT_SURCH):
-        os.makedirs(constants.DOT_SURCH)
-    start = time()
-
-    repo = _get_repo(source)
-    commits = _get_all_commits(repo)
-    commits_count = len(commits)
-    results = _search(search_list, commits)
-    _write_results(results)
-
-    total_time = utils.convert_to_seconds(start, time())
-
-    logger.info('Found {0} results in {1} commits'.format(
-        self.result_count, commits_count))
-    logger.debug('Total time: {0} seconds'.format(total_time))
-    if 'pagerduty' in self.pager:
-        handler.pagerduty_trigger(config_file=self.config_file,
-                                  log=self.results_file_path)
-    return results
+    repo_name, organization = _get_repo_and_organization_name(repo_url)
+    global repo_name, organization
+    _get_repo(repo_url=repo_url, cloned_repo_dir=cloned_repo_dir)
+    commits_list = _get_all_commits_from_all_branches(
+        cloned_repo_dir=cloned_repo_dir)
+    results = _search(search_list=search_list, cloned_repo_dir=cloned_repo_dir,
+                      commits=commits_list)
+    _write_results(results, cloned_repo_dir, results_file_path)
