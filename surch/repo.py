@@ -13,8 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-from pprint import pprint
-
 import os
 import logging
 import subprocess
@@ -197,7 +195,6 @@ def _write_results(results, cloned_repo_dir, results_file_path):
             # We need both sha and filename and when we don't get them
             # we skip to the next var
             pass
-    print result_count
 
 
 def _get_user_details(cloned_repo_dir, sha):
