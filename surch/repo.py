@@ -25,29 +25,21 @@ from . import utils, constants
 from .exceptions import SurchError
 
 
-def _get_repo_and_organization_name(repo_url):
-    if '://' in repo_url:
-        organization_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
-        repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
-        return repo_name.encode('ascii'), organization_name.encode('ascii')
-
-
 def _run_command_without_output(command):
     try:
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         proc.stdout, proc.stderr = proc.communicate()
-        # if verbose:
-        #     pass
-        #     # lgr.debug(proc.stdout)
     except subprocess.CalledProcessError as git_error:
         err = 'Failed execute {0} on repo {1} ({2})'.format(command, repo_name,
                                                             git_error)
         lgr.error(err)
 
+
 def set_logger(verbose):
     utils.logger.handlers.pop()
     lgr = utils.setup_logger(verbose)
     return lgr
+
 
 def _order_branches_list(branches_names):
     branches = []
@@ -185,6 +177,7 @@ def _write_results(results, cloned_repo_dir, results_file_path):
             # We need both sha and filename and when we don't get them
             # we skip to the next var
             pass
+    lgr.info('Found {0} files with your strings...'.format(result_count))
 
 
 def _get_user_details(cloned_repo_dir, sha):
@@ -205,7 +198,7 @@ def search(repo_url, cloned_repo_dir, search_list, results_file_path,
     """API method init repo instance and search strings
     """
     lgr = set_logger(verbose)
-    repo_name, organization = _get_repo_and_organization_name(repo_url)
+    repo_name, organization = utils._get_repo_and_organization_name(repo_url)
     global repo_name, organization, lgr
 
     _get_repo(repo_url=repo_url, cloned_repo_dir=cloned_repo_dir)

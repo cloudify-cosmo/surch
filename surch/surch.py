@@ -15,13 +15,16 @@
 
 import sys
 
+import os
 import click
 
 from . import repo
+from . import utils
 from . import constants
 from . import organization
 from .exceptions import SurchError
 
+utils._create_surch_env()
 
 CLICK_CONTEXT_SETTINGS = dict(
     help_option_names=['-h', '--help'],
@@ -45,9 +48,9 @@ search_string = click.option(
 cloned_repos_dir = click.option(
     '-p',
     '--cloned-repos-dir',
-    default=constants.CLONED_REPOS_PATH,
+    default=None,
     help='Directory to clone repository to. '
-    '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
+    '[defaults to {0}/<repo-name>]'.format(constants.CLONED_REPOS_PATH))
 
 log_path = click.option(
     '-l',
@@ -113,7 +116,7 @@ def main():
 
 
 @main.command(name='repo')
-@click.argument('repo_url', required=False)
+@click.argument('repo_url', required=True)
 @search_string
 @cloned_repos_dir
 @log_path
@@ -124,10 +127,12 @@ def main():
 # @pager
 # @source
 # @printout
-
 def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, **kwargs):
     """Search a single repository
         """
+    repo_name, organization = utils._get_repo_and_organization_name(repo_url)
+    cloned_repos_dir = cloned_repos_dir or os.path.join(
+        constants.CLONED_REPOS_PATH, organization, repo_name)
     try:
         repo.search(repo_url=repo_url, cloned_repo_dir=cloned_repos_dir,
                     search_list=string, results_file_path=log, verbose=verbose)

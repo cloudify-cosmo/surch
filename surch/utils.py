@@ -22,8 +22,22 @@ from distutils.spawn import find_executable
 
 import yaml
 
+from . import constants
 from .exceptions import SurchError
 
+
+def _create_surch_env():
+    if not os.path.exists(constants.CLONED_REPOS_PATH):
+        os.makedirs(constants.CLONED_REPOS_PATH)
+    if not os.path.exists(constants.RESULTS_DIR_PATH):
+        os.makedirs(constants.RESULTS_DIR_PATH)
+
+
+def _get_repo_and_organization_name(repo_url):
+    if '://' in repo_url:
+        organization_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
+        repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+        return repo_name.encode('ascii'), organization_name.encode('ascii')
 
 def setup_logger(verbose=False):
     """Define logger level
