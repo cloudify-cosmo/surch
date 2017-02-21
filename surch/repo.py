@@ -14,7 +14,6 @@
 #    * limitations under the License.
 
 import os
-import logging
 import subprocess
 from time import time
 
@@ -24,8 +23,6 @@ from tinydb import TinyDB
 from .plugins import handler
 from . import utils, constants
 from .exceptions import SurchError
-
-# logger = utils.logger
 
 
 def _get_repo_and_organization_name(repo_url):
@@ -41,18 +38,21 @@ def _run_command_without_output(command):
         proc.stdout, proc.stderr = proc.communicate()
         # if verbose:
         #     pass
-        #     # logger.debug(proc.stdout)
+        #     # lgr.debug(proc.stdout)
     except subprocess.CalledProcessError as git_error:
-        err = 'Failed execute {0} on repo {1} ({2})'.format(command,
-                                                            repo_name,
+        err = 'Failed execute {0} on repo {1} ({2})'.format(command, repo_name,
                                                             git_error)
-        # logger.error(err)
+        lgr.error(err)
 
+def set_logger(verbose):
+    utils.logger.handlers.pop()
+    lgr = utils.setup_logger(verbose)
+    return lgr
 
 def _order_branches_list(branches_names):
     branches = []
     for name in branches_names:
-        name = name.replace("  ", "").replace('* ', "")
+        name = name.replace('  ', '').replace('* ', '')
         branches.append(name)
     return branches
 
@@ -64,13 +64,14 @@ def _get_repo(repo_url, cloned_repo_dir):
     """
 
     if os.path.isdir(cloned_repo_dir):
-        # logger.debug('Local repo already exists at: {0}'.format( repo_path))
-        # logger.info('Pulling repo: {0}...'.format(repo_name))
+        lgr.debug('Local repo already exists at: {0}'.format(
+            cloned_repo_dir))
+        lgr.info('Pulling repo: {0}...'.format(repo_name))
         git_pull_command = 'git -C {0} pull -q'.format(cloned_repo_dir)
         _run_command_without_output(git_pull_command)
     else:
-        # logger.info('Cloning repo {0} from org {1} to {2}...'.format(
-        #     repo_name, organization, repo_path))
+        lgr.info('Cloning repo {0} from org {1} to {2}...'.format(
+            repo_name, organization, cloned_repo_dir))
         git_clone_command = 'git clone -q {0} {1}'.format(repo_url,
                                                           cloned_repo_dir)
         _run_command_without_output(git_clone_command)
@@ -78,19 +79,19 @@ def _get_repo(repo_url, cloned_repo_dir):
 
 def _get_all_commits_from_all_branches(cloned_repo_dir):
     commit_list = []
-    git_get_branches_command = "git -C {0} branch -a".format(cloned_repo_dir)
+    git_get_branches_command = 'git -C {0} branch -a'.format(cloned_repo_dir)
     branches = subprocess.check_output(git_get_branches_command,
                                        shell=True).splitlines()
     for branch in branches:
         if '/' in str(branch):
             name = str(branch).rsplit('/', 1)[-1]
-            git_checkout_command = "git -C {0} checkout {1} -q".format(
+            git_checkout_command = 'git -C {0} checkout {1} -q'.format(
                 cloned_repo_dir, name)
 
             _run_command_without_output(git_checkout_command)
 
-            git_get_commits_from_branch = "git -C {0} " \
-                                          "rev-list origin/{1}".format(
+            git_get_commits_from_branch = 'git -C {0} ' \
+                                          'rev-list origin/{1}'.format(
                 cloned_repo_dir, name)
 
             commits_per_branch = subprocess.check_output(
@@ -98,16 +99,15 @@ def _get_all_commits_from_all_branches(cloned_repo_dir):
 
             for commit_per_branch in commits_per_branch:
                 commit_list.append(commit_per_branch)
-            # lgr.info('Found {0} commits in {1}...'.format(
-            #     len(commit_list), repo_name))
-            commits = len(commit_list)
+    lgr.info('Found {0} commits in {1}...'.format(len(list(set(commit_list))),
+                                                     repo_name))
     return list(set(commit_list))
 
 
 def _create_search_string(search_list):
     """Create part of the grep command from search list.
     """
-    # logger.debug('Generating git grep-able search string...')
+    lgr.debug('Generating git grep-able search string...')
     unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
     search_string = ' --or -e '.join(unglobbed_search_list)
     return search_string
@@ -119,12 +119,10 @@ def _search_commit(cloned_repo_dir, commit, search_string):
     try:
         matched_files = subprocess.check_output(
             'git -C {0} grep -c -e {1} {2}'.format(cloned_repo_dir,
-                                                   search_string,
-                                                   commit),
+                                                   search_string, commit),
             shell=True).splitlines()
         branches_names = subprocess.check_output(
-            'git  -C {0} branch --contains {1}'.format(cloned_repo_dir,
-                                                       commit),
+            'git  -C {0} branch --contains {1}'.format(cloned_repo_dir, commit),
             shell=True).splitlines()
 
         return {'matched_files': matched_files,
@@ -139,12 +137,11 @@ def _search(search_list, commits, cloned_repo_dir):
     """
     search_string = _create_search_string(list(search_list))
     matching_commits = []
-    # logger.info('Scanning repo {0} for {1} string(s)...'.format(
-    #     repo_name, len(search_list)))
+    lgr.info('Scanning repo {0} for {1} string(s)...'.format(
+        repo_name, len(search_list)))
     for commit in commits:
-        matched_files_and_branches = _search_commit(cloned_repo_dir,
-                                                  commit,
-                                                  search_string)
+        matched_files_and_branches = _search_commit(cloned_repo_dir, commit,
+                                                    search_string)
         matching_commits.append(matched_files_and_branches)
 
     return matching_commits
@@ -154,36 +151,29 @@ def _write_results(results, cloned_repo_dir, results_file_path):
     """Write the result to DB
     """
     result_count = 0
+    db = TinyDB(results_file_path, indent=4,
+                sort_keys=True, separators=(',', ': '))
 
-    db = TinyDB(
-        results_file_path,
-        indent=4,
-        sort_keys=True,
-        separators=(',', ': '))
-
-    # logger.info('Writing results to: {0}...'.format(
-    #     results_file_path))
+    lgr.info('Writing results to: {0}...'.format(results_file_path))
     for result in results:
-        # pprint(result['matched_files'])
         try:
             for match in list(result['matched_files']):
                 branches_names = _order_branches_list(result['branches_names'])
                 commit_sha, filepath, line_num = match.rsplit(':')
                 username, email, commit_time = \
                     _get_user_details(cloned_repo_dir, commit_sha)
-                result = dict(
-                    email=email,
-                    filepath=filepath,
-                    username=username,
-                    commit_sha=commit_sha,
-                    commit_time=commit_time,
-                    branches_names=branches_names,
-                    repository_name=repo_name,
-                    organization_name=organization,
-                    blob_url=constants.GITHUB_BLOB_URL.format(
-                        organization,
-                        repo_name,
-                        commit_sha, filepath))
+                result = dict(email=email,
+                              filepath=filepath,
+                              username=username,
+                              commit_sha=commit_sha,
+                              commit_time=commit_time,
+                              branches_names=branches_names,
+                              repository_name=repo_name,
+                              organization_name=organization,
+                              blob_url=constants.GITHUB_BLOB_URL.format(
+                                  organization,
+                                  repo_name,
+                                  commit_sha, filepath))
                 result_count += 1
                 db.insert(result)
         except (IndexError, TypeError):
@@ -202,23 +192,22 @@ def _get_user_details(cloned_repo_dir, sha):
     per commit before write to DB
     """
     details = subprocess.check_output(
-        "git -C {0} show -s  {1}".format(cloned_repo_dir, sha), shell=True)
+        'git -C {0} show -s  {1}'.format(cloned_repo_dir, sha), shell=True)
     name = utils.find_string_between_strings(details, 'Author: ', ' <')
     email = utils.find_string_between_strings(details, '<', '>')
-    commit_time = utils.find_string_between_strings(details, 'Date:   ',
-                                                    '+').strip()
+    commit_time = utils.find_string_between_strings(details,
+                                                    'Date:   ', '+').strip()
     return name, email, commit_time
 
 
-def search(repo_url,
-           cloned_repo_dir,
-           search_list,
-           results_file_path,
-           **kwargs):
+def search(repo_url, cloned_repo_dir, search_list, results_file_path,
+           verbose=False, **kwargs):
     """API method init repo instance and search strings
     """
+    lgr = set_logger(verbose)
     repo_name, organization = _get_repo_and_organization_name(repo_url)
-    global repo_name, organization
+    global repo_name, organization, lgr
+
     _get_repo(repo_url=repo_url, cloned_repo_dir=cloned_repo_dir)
     commits_list = _get_all_commits_from_all_branches(
         cloned_repo_dir=cloned_repo_dir)

@@ -42,7 +42,7 @@ search_string = click.option(
     help='String you would like to search for. '
     'This can be passed multiple times')
 
-cloned_repos_path = click.option(
+cloned_repos_dir = click.option(
     '-p',
     '--cloned-repos-dir',
     default=constants.CLONED_REPOS_PATH,
@@ -114,32 +114,23 @@ def main():
 
 @main.command(name='repo')
 @click.argument('repo_url', required=False)
-@click.option('-s', '--string', multiple=True,
-              help='String you would like to search for. '
-                   'This can be passed multiple times.')
-@click.option('-p', '--cloned-repo-dir', default=constants.CLONED_REPOS_PATH,
-              help='Directory to clone repository to. '
-                   '[defaults to {0}]'.format(constants.CLONED_REPOS_PATH))
-@click.option('-l', '--log', default=constants.RESULTS_PATH,
-              help='All results will be logged to this directory. '
-                   '[defaults to {0}]'.format(constants.RESULTS_PATH))
+@search_string
+@cloned_repos_dir
+@log_path
+@verbose
 # @config_file
 # @log_path
 # @remove_clone
 # @pager
 # @source
 # @printout
-# @verbose
-def surch_repo(repo_url,
-               cloned_repo_dir,
-               string, log, **kwargs):
+
+def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, **kwargs):
     """Search a single repository
         """
     try:
-        repo.search(repo_url=repo_url,
-                    cloned_repo_dir=cloned_repo_dir,
-                    search_list=string,
-                    results_file_path=log)
+        repo.search(repo_url=repo_url, cloned_repo_dir=cloned_repos_dir,
+                    search_list=string, results_file_path=log, verbose=verbose)
     except SurchError as ex:
         sys.exit(ex)
 

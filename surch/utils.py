@@ -25,16 +25,19 @@ import yaml
 from .exceptions import SurchError
 
 
-def setup_logger():
+def setup_logger(verbose=False):
     """Define logger level
     """
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    logger = logging.getLogger('surch')
+    logger = logging.getLogger('Surch')
     logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    if not verbose:
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.DEBUG)
     return logger
 
 logger = setup_logger()
