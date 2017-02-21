@@ -116,7 +116,8 @@ def main():
 
 
 @main.command(name='repo')
-@click.argument('repo_url', required=True)
+@click.argument('repo_url',
+                required=True)
 @search_string
 @cloned_repos_dir
 @log_path
@@ -128,7 +129,11 @@ def main():
 # @source
 # @printout
 def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, **kwargs):
-    """Search a single repository
+    """Search a single repository.
+
+        You can add user_name and password. Used surch like that:
+
+         "surch repo 'https://<user>:<pass>@github.com/cloudify-cosmo/surch.git'"
         """
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
     cloned_repos_dir = cloned_repos_dir or os.path.join(
@@ -138,6 +143,7 @@ def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, **kwargs):
                     search_list=string, results_file_path=log, verbose=verbose)
     except SurchError as ex:
         sys.exit(ex)
+
 
 #
 # @main.command(name='org')
