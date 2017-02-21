@@ -194,16 +194,17 @@ def _get_user_details(cloned_repo_dir, sha):
 
 
 def search(repo_url, cloned_repo_dir, search_list, results_file_path,
-           verbose=False, **kwargs):
+           verbose=False, remove_clone_dir=False, **kwargs):
     """API method init repo instance and search strings
     """
     lgr = set_logger(verbose)
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
     global repo_name, organization, lgr
 
-    _get_repo(repo_url=repo_url, cloned_repo_dir=cloned_repo_dir)
-    commits_list = _get_all_commits_from_all_branches(
-        cloned_repo_dir=cloned_repo_dir)
-    results = _search(search_list=search_list, cloned_repo_dir=cloned_repo_dir,
-                      commits=commits_list)
+    _get_repo(repo_url, cloned_repo_dir)
+    commits_list = _get_all_commits_from_all_branches(cloned_repo_dir)
+
+    results = _search(search_list, commits_list, cloned_repo_dir)
     _write_results(results, cloned_repo_dir, results_file_path)
+
+    utils._remove_repos_folder(cloned_repo_dir, remove_clone_dir)

@@ -42,30 +42,30 @@ search_string = click.option(
     '-s',
     '--string',
     multiple=True,
-    help='String you would like to search for. '
-    'This can be passed multiple times')
+    help='String you would like to search for.\n'
+         'This can be passed multiple times')
 
 cloned_repos_dir = click.option(
     '-p',
     '--cloned-repos-dir',
     default=None,
-    help='Directory to clone repository to. '
-    '[defaults to {0}/<repo-name>]'.format(constants.CLONED_REPOS_PATH))
+    help='Directory to clone repository to.\n'
+         '[defaults to {0}/<repo-name>]'.format(constants.CLONED_REPOS_PATH))
 
 log_path = click.option(
     '-l',
     '--log',
     default=constants.RESULTS_PATH,
-    help='All results will be logged to this directory. '
-    '[defaults to {0}]'.format(constants.RESULTS_PATH))
+    help='All results will be logged to this directory.\n'
+         '[defaults to \r{0}]'.format(constants.RESULTS_PATH))
 
 remove_clone = click.option(
     '-R',
     '--remove',
     default=False,
     is_flag=True,
-    help="Remove clone repo directory. "
-         "When used -p and -l can't be same folder")
+    help='Remove clone repo directory.\n'
+         'Don\'t used when -p and -l is the same path.')
 
 pager = click.option(
     '--pager',
@@ -122,13 +122,14 @@ def main():
 @cloned_repos_dir
 @log_path
 @verbose
+@remove_clone
 # @config_file
 # @log_path
-# @remove_clone
 # @pager
 # @source
 # @printout
-def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, **kwargs):
+def surch_repo(repo_url, cloned_repos_dir, string, log, verbose,
+               remove, **kwargs):
     """Search a single repository.
 
         You can add user_name and password. Used surch like that:
@@ -140,7 +141,8 @@ def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, **kwargs):
         constants.CLONED_REPOS_PATH, organization, repo_name)
     try:
         repo.search(repo_url=repo_url, cloned_repo_dir=cloned_repos_dir,
-                    search_list=string, results_file_path=log, verbose=verbose)
+                    search_list=string, results_file_path=log,
+                    remove_clone=remove, verbose=verbose)
     except SurchError as ex:
         sys.exit(ex)
 

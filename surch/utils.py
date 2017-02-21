@@ -39,6 +39,7 @@ def _get_repo_and_organization_name(repo_url):
         repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
         return repo_name.encode('ascii'), organization_name.encode('ascii')
 
+
 def setup_logger(verbose=False):
     """Define logger level
     """
@@ -97,6 +98,13 @@ def read_config_file(config_file,
     conf_vars.setdefault('is_organization', is_organization)
     conf_vars.setdefault('remove_cloned_dir', remove_cloned_dir)
     return conf_vars
+
+
+def _remove_repos_folder(path=None, remove_cloned_dir=False):
+    """print log and removing directory"""
+    if remove_cloned_dir:
+        logger.info('Removing: {0}...'.format(path))
+        shutil.rmtree(path)
 
 
 def convert_to_seconds(start, end):
