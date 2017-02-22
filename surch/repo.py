@@ -15,16 +15,14 @@
 
 import os
 import subprocess
-from time import time
+# from time import time
 
-import logging
 import retrying
 from tinydb import TinyDB
 
-from .plugins import handler
+# from .plugins import handler
 from . import utils, constants
-from .exceptions import SurchError
-
+# from .exceptions import SurchError
 
 
 def _run_command_without_output(command, repo_name, logger=utils.logger):
@@ -56,13 +54,13 @@ def _get_repo(repo_url, cloned_repo_dir, repo_name, organization,
             cloned_repo_dir))
         logger.info('Pulling repo: {0}...'.format(repo_name))
         git_pull_command = 'git -C {0} pull -q'.format(cloned_repo_dir)
-        _run_command_without_output(git_pull_command, repo_name,logger)
+        _run_command_without_output(git_pull_command, repo_name, logger)
     else:
-        logger.info('Cloning repo {0} from org {1} to {2}...'.format(
+        logger.info('Cloning repo {0} from org/user {1} to {2}...'.format(
             repo_name, organization, cloned_repo_dir))
         git_clone_command = 'git clone -q {0} {1}'.format(repo_url,
                                                           cloned_repo_dir)
-        _run_command_without_output(git_clone_command, repo_name,logger)
+        _run_command_without_output(git_clone_command, repo_name, logger)
 
 
 def _get_all_commits_from_all_branches(cloned_repo_dir, repo_name,
@@ -77,11 +75,11 @@ def _get_all_commits_from_all_branches(cloned_repo_dir, repo_name,
             git_checkout_command = 'git -C {0} checkout {1} -q'.format(
                 cloned_repo_dir, name)
 
-            _run_command_without_output(git_checkout_command, repo_name,logger)
+            _run_command_without_output(git_checkout_command,
+                                        repo_name, logger)
 
-            git_get_commits_from_branch = 'git -C {0} ' \
-                                          'rev-list origin/{1}'.format(
-                cloned_repo_dir, name)
+            git_get_commits_from_branch = \
+                'git -C {0} rev-list origin/{1}'.format(cloned_repo_dir, name)
 
             commits_per_branch = subprocess.check_output(
                 git_get_commits_from_branch, shell=True).splitlines()
@@ -193,13 +191,22 @@ def _get_user_details(cloned_repo_dir, sha):
     return name, email, commit_time
 
 
-def search(repo_url, cloned_repo_dir, search_list, results_file_path,
-           verbose=False, remove_clone_dir=False, **kwargs):
+def search(repo_url, search_list, results_file_path=None, cloned_repo_dir=None,
+           verbose=False, remove_clone_dir=False, consolidate_log=False,
+           from_org=False, **kwargs):
     """API method init repo instance and search strings
     """
+    # utils.check_string_list(search_list)
     logger = utils.set_logger(verbose)
+    utils.handle_results_file(results_file_path, consolidate_log)
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
 
+    cloned_repo_dir = cloned_repo_dir or os.path.join(
+        constants.CLONED_REPOS_PATH, organization, repo_name)
+    if from_org:
+        cloned_repo_dir = os.path.join(cloned_repo_dir, repo_name)
+
+    results_file_path = results_file_path or constants.RESULTS_PATH
     _get_repo(repo_url, cloned_repo_dir, repo_name, organization, logger)
     commits_list = _get_all_commits_from_all_branches(cloned_repo_dir,
                                                       repo_name, logger)
@@ -207,6 +214,6 @@ def search(repo_url, cloned_repo_dir, search_list, results_file_path,
     results = _search(search_list, commits_list, cloned_repo_dir, repo_name,
                       logger)
     _write_results(results, cloned_repo_dir, results_file_path,
-                   repo_name, organization,logger)
+                   repo_name, organization, logger)
 
     utils._remove_repos_folder(cloned_repo_dir, remove_clone_dir)

@@ -15,7 +15,6 @@
 
 import sys
 
-import os
 import click
 
 from . import repo
@@ -85,14 +84,14 @@ verbose = click.option('-v', '--verbose', default=False, is_flag=True)
 
 exclude_repo = click.option(
     '--exclude-repo',
-    default='',
+    default=None,
     multiple=True,
     help='Repo you would like to exclude. '
     'This can be passed multiple times')
 
 include_repo = click.option(
     '--include-repo',
-    default='',
+    default=None,
     multiple=True,
     help='Repo you would like to include. '
     'This can be passed multiple times.')
@@ -136,9 +135,6 @@ def surch_repo(repo_url, cloned_repos_dir, string, log, verbose,
 
          "surch repo 'https://<user>:<pass>@github.com/cloudify-cosmo/surch.git'"
         """
-    repo_name, organization = utils._get_repo_and_organization_name(repo_url)
-    cloned_repos_dir = cloned_repos_dir or os.path.join(
-        constants.CLONED_REPOS_PATH, organization, repo_name)
     try:
         repo.search(repo_url=repo_url, cloned_repo_dir=cloned_repos_dir,
                     search_list=string, results_file_path=log,
@@ -147,105 +143,66 @@ def surch_repo(repo_url, cloned_repos_dir, string, log, verbose,
         sys.exit(ex)
 
 
-#
-# @main.command(name='org')
-# @click.argument('organization-name', required=False)
+@main.command(name='org')
+@click.argument('organization-name', required=False)
+@search_string
+@cloned_repos_dir
+@log_path
+@verbose
+@remove_clone
+@github_user
+@github_password
+@exclude_repo
+@include_repo
 # @config_file
-# @search_string
-# @cloned_repos_path
-# @log_path
-# @remove_clone
-# @exclude_repo
-# @include_repo
-# @github_user
-# @github_password
 # @pager
 # @source
 # @printout
-# @verbose
-# def surch_org(organization_name,
-#               config_file,
-#               string,
-#               include_repo,
-#               pager,
-#               exclude_repo,
-#               user,
-#               print_result,
-#               remove,
-#               password,
-#               source,
-#               cloned_repos_dir,
-#               log,
-#               verbose):
-#     """Search all or some repositories in an organization
-#     """
-#     try:
-#         organization.search(
-#             pager=pager,
-#             source=source,
-#             git_user=user,
-#             results_dir=log,
-#             verbose=verbose,
-#             repos_to_skip=exclude_repo,
-#             repos_to_check=include_repo,
-#             git_password=password,
-#             config_file=config_file,
-#             remove_cloned_dir=remove,
-#             search_list=list(string),
-#             print_result=print_result,
-#             organization=organization_name,
-#             cloned_repos_dir=cloned_repos_dir)
-#     except SurchError as ex:
-#         sys.exit(ex)
-#
-#
-# @main.command(name='user')
-# @click.argument('username', required=False)
+def surch_org(organization_name, string, include_repo, exclude_repo, user,
+              remove, password, cloned_repos_dir, log, verbose):
+    """Search all or some repositories in an organization
+    """
+    try:
+        organization.search(git_item_name=organization_name,
+                            is_organization=True, git_user=user,
+                            git_password=password, search_list=string,
+                            results_file_path=log,
+                            cloned_repos_dir=cloned_repos_dir,
+                            repos_to_skip=exclude_repo,
+                            repos_to_check=include_repo, consolidate_log=True,
+                            remove_clones_dir=remove, verbose=verbose)
+    except SurchError as ex:
+        sys.exit(ex)
+
+
+@main.command(name='user')
+@click.argument('username', required=False)
+@search_string
+@cloned_repos_dir
+@log_path
+@verbose
+@remove_clone
+@github_user
+@github_password
+@exclude_repo
+@include_repo
 # @config_file
-# @search_string
-# @cloned_repos_path
-# @log_path
-# @remove_clone
-# @exclude_repo
-# @include_repo
-# @github_user
-# @github_password
 # @pager
 # @source
 # @printout
-# @verbose
-# def surch_user(user_name,
-#                config_file,
-#                string,
-#                include_repo,
-#                pager,
-#                exclude_repo,
-#                user,
-#                remove,
-#                password,
-#                cloned_repos_dir,
-#                log,
-#                print_result,
-#                source,
-#                verbose):
-#     """Search all or some repositories for a user
-#     """
-#     try:
-#         organization.search(
-#             pager=pager,
-#             source=source,
-#             git_user=user,
-#             results_dir=log,
-#             verbose=verbose,
-#             repos_to_skip=exclude_repo,
-#             repos_to_check=include_repo,
-#             is_organization=False,
-#             git_password=password,
-#             config_file=config_file,
-#             remove_cloned_dir=remove,
-#             search_list=list(string),
-#             print_result=print_result,
-#             organization=user_name,
-#             cloned_repos_dir=cloned_repos_dir)
-#     except SurchError as ex:
-#         sys.exit(ex)
+def surch_user(username, string, include_repo, exclude_repo, user,
+              remove, password, cloned_repos_dir, log, verbose):
+    """Search all or some repositories in an organization
+    """
+    try:
+        organization.search(git_item_name=username,
+                            is_organization=False, git_user=user,
+                            git_password=password, search_list=string,
+                            results_file_path=log,
+                            cloned_repos_dir=cloned_repos_dir,
+                            repos_to_skip=exclude_repo,
+                            repos_to_check=include_repo,
+                            consolidate_log=True,
+                            remove_clones_dir=remove, verbose=verbose)
+    except SurchError as ex:
+        sys.exit(ex)
