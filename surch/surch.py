@@ -142,7 +142,7 @@ def surch_repo(repo_url, cloned_repos_dir, string, log, verbose,
     try:
         repo.search(repo_url=repo_url, cloned_repo_dir=cloned_repos_dir,
                     search_list=string, results_file_path=log,
-                    remove_clone=remove, verbose=verbose)
+                    remove_clone_dir=remove, verbose=verbose)
     except SurchError as ex:
         sys.exit(ex)
 

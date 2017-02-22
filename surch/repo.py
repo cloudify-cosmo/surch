@@ -17,6 +17,7 @@ import os
 import subprocess
 from time import time
 
+import logging
 import retrying
 from tinydb import TinyDB
 
@@ -25,20 +26,15 @@ from . import utils, constants
 from .exceptions import SurchError
 
 
-def _run_command_without_output(command):
+
+def _run_command_without_output(command, repo_name, logger=utils.logger):
     try:
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         proc.stdout, proc.stderr = proc.communicate()
     except subprocess.CalledProcessError as git_error:
         err = 'Failed execute {0} on repo {1} ({2})'.format(command, repo_name,
                                                             git_error)
-        lgr.error(err)
-
-
-def set_logger(verbose):
-    utils.logger.handlers.pop()
-    lgr = utils.setup_logger(verbose)
-    return lgr
+        logger.error(err)
 
 
 def _order_branches_list(branches_names):
@@ -50,26 +46,27 @@ def _order_branches_list(branches_names):
 
 
 @retrying.retry(stop_max_attempt_number=3)
-def _get_repo(repo_url, cloned_repo_dir):
+def _get_repo(repo_url, cloned_repo_dir, repo_name, organization,
+              logger=utils.logger):
     """Clone the repo if it doesn't exist in the cloned_repo_dir.
     Otherwise, pull it.
     """
-
     if os.path.isdir(cloned_repo_dir):
-        lgr.debug('Local repo already exists at: {0}'.format(
+        logger.debug('Local repo already exists at: {0}'.format(
             cloned_repo_dir))
-        lgr.info('Pulling repo: {0}...'.format(repo_name))
+        logger.info('Pulling repo: {0}...'.format(repo_name))
         git_pull_command = 'git -C {0} pull -q'.format(cloned_repo_dir)
-        _run_command_without_output(git_pull_command)
+        _run_command_without_output(git_pull_command, repo_name,logger)
     else:
-        lgr.info('Cloning repo {0} from org {1} to {2}...'.format(
+        logger.info('Cloning repo {0} from org {1} to {2}...'.format(
             repo_name, organization, cloned_repo_dir))
         git_clone_command = 'git clone -q {0} {1}'.format(repo_url,
                                                           cloned_repo_dir)
-        _run_command_without_output(git_clone_command)
+        _run_command_without_output(git_clone_command, repo_name,logger)
 
 
-def _get_all_commits_from_all_branches(cloned_repo_dir):
+def _get_all_commits_from_all_branches(cloned_repo_dir, repo_name,
+                                       logger=utils.logger):
     commit_list = []
     git_get_branches_command = 'git -C {0} branch -a'.format(cloned_repo_dir)
     branches = subprocess.check_output(git_get_branches_command,
@@ -80,7 +77,7 @@ def _get_all_commits_from_all_branches(cloned_repo_dir):
             git_checkout_command = 'git -C {0} checkout {1} -q'.format(
                 cloned_repo_dir, name)
 
-            _run_command_without_output(git_checkout_command)
+            _run_command_without_output(git_checkout_command, repo_name,logger)
 
             git_get_commits_from_branch = 'git -C {0} ' \
                                           'rev-list origin/{1}'.format(
@@ -91,15 +88,16 @@ def _get_all_commits_from_all_branches(cloned_repo_dir):
 
             for commit_per_branch in commits_per_branch:
                 commit_list.append(commit_per_branch)
-    lgr.info('Found {0} commits in {1}...'.format(len(list(set(commit_list))),
-                                                     repo_name))
+    commit_num = len(list(set(commit_list)))
+    logger.info('Found {0} commits in {1}...'.format(commit_num, repo_name))
     return list(set(commit_list))
 
 
-def _create_search_string(search_list):
+def _create_search_string(search_list,
+                          logger=utils.logger):
     """Create part of the grep command from search list.
     """
-    lgr.debug('Generating git grep-able search string...')
+    logger.debug('Generating git grep-able search string...')
     unglobbed_search_list = ["'{0}'".format(item) for item in search_list]
     search_string = ' --or -e '.join(unglobbed_search_list)
     return search_string
@@ -123,13 +121,14 @@ def _search_commit(cloned_repo_dir, commit, search_string):
         return '', ''
 
 
-def _search(search_list, commits, cloned_repo_dir):
+def _search(search_list, commits, cloned_repo_dir, repo_name,
+            logger=utils.logger):
     """Create list of all commits which contains one of the strings
     we're searching for.
     """
-    search_string = _create_search_string(list(search_list))
+    search_string = _create_search_string(list(search_list), logger)
     matching_commits = []
-    lgr.info('Scanning repo {0} for {1} string(s)...'.format(
+    logger.info('Scanning repo {0} for {1} string(s)...'.format(
         repo_name, len(search_list)))
     for commit in commits:
         matched_files_and_branches = _search_commit(cloned_repo_dir, commit,
@@ -139,14 +138,15 @@ def _search(search_list, commits, cloned_repo_dir):
     return matching_commits
 
 
-def _write_results(results, cloned_repo_dir, results_file_path):
+def _write_results(results, cloned_repo_dir, results_file_path,
+                   repo_name, organization, logger=utils.logger):
     """Write the result to DB
     """
     result_count = 0
     db = TinyDB(results_file_path, indent=4,
                 sort_keys=True, separators=(',', ': '))
 
-    lgr.info('Writing results to: {0}...'.format(results_file_path))
+    logger.info('Writing results to: {0}...'.format(results_file_path))
     for result in results:
         try:
             for match in list(result['matched_files']):
@@ -177,7 +177,7 @@ def _write_results(results, cloned_repo_dir, results_file_path):
             # We need both sha and filename and when we don't get them
             # we skip to the next var
             pass
-    lgr.info('Found {0} files with your strings...'.format(result_count))
+    logger.info('Found {0} files with your strings...'.format(result_count))
 
 
 def _get_user_details(cloned_repo_dir, sha):
@@ -197,14 +197,16 @@ def search(repo_url, cloned_repo_dir, search_list, results_file_path,
            verbose=False, remove_clone_dir=False, **kwargs):
     """API method init repo instance and search strings
     """
-    lgr = set_logger(verbose)
+    logger = utils.set_logger(verbose)
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
-    global repo_name, organization, lgr
 
-    _get_repo(repo_url, cloned_repo_dir)
-    commits_list = _get_all_commits_from_all_branches(cloned_repo_dir)
+    _get_repo(repo_url, cloned_repo_dir, repo_name, organization, logger)
+    commits_list = _get_all_commits_from_all_branches(cloned_repo_dir,
+                                                      repo_name, logger)
 
-    results = _search(search_list, commits_list, cloned_repo_dir)
-    _write_results(results, cloned_repo_dir, results_file_path)
+    results = _search(search_list, commits_list, cloned_repo_dir, repo_name,
+                      logger)
+    _write_results(results, cloned_repo_dir, results_file_path,
+                   repo_name, organization,logger)
 
     utils._remove_repos_folder(cloned_repo_dir, remove_clone_dir)

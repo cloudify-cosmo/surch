@@ -33,11 +33,17 @@ def _create_surch_env():
         os.makedirs(constants.RESULTS_DIR_PATH)
 
 
-def _get_repo_and_organization_name(repo_url):
-    if '://' in repo_url:
+def _get_repo_and_organization_name(repo_url, type=None):
+    if not type:
         organization_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
         repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
         return repo_name.encode('ascii'), organization_name.encode('ascii')
+    elif 'repo' in type:
+        repo_name = repo_url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+        return repo_name.encode('ascii')
+    elif 'org' in type:
+        organization_name = repo_url.rsplit('.com/', 1)[-1].rsplit('/', 1)[0]
+        return organization_name.encode('ascii')
 
 
 def setup_logger(verbose=False):
@@ -54,6 +60,13 @@ def setup_logger(verbose=False):
     else:
         logger.setLevel(logging.DEBUG)
     return logger
+
+
+def set_logger(verbose):
+    lgr = logger
+    if verbose:
+        lgr.setLevel(logging.DEBUG)
+    return lgr
 
 logger = setup_logger()
 
