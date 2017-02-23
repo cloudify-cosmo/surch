@@ -51,11 +51,11 @@ remove_clone = click.option('-R', '--remove', default=False, is_flag=True,
                                  'Don\'t used when -p and -l is the same path.')
 
 remove_member_clone = click.option('--remove-member-clone', default=False,
-                                 is_flag=True,
-                                 help='Remove member clone directory '
-                                      'after finish check him.\n '
-                                      'Don\'t used when -p and -l is '
-                                      'the same path.')
+                                   is_flag=True,
+                                   help='Remove member clone directory '
+                                        'after finish check him.\n '
+                                        'Don\'t used when -p and -l is '
+                                        'the same path.')
 
 remove_repo_clone = click.option('--remove-repo-clone', default=False,
                                  is_flag=True,
@@ -73,20 +73,18 @@ source = click.option('--source', multiple=True, default=[],
 exclude_repo = click.option('--exclude-repo', default=None, multiple=True,
                             help='Repo you would like to exclude. '
                                  'This can be passed multiple times')
-
 include_repo = click.option('--include-repo', default=None, multiple=True,
                             help='Repo you would like to include. '
                                  'This can be passed multiple times.')
+
 exclude_user = click.option('--exclude-user', default=None, multiple=True,
                             help='User you would like to exclude. '
                                  'This can be passed multiple times')
-
 include_user = click.option('--include-user', default=None, multiple=True,
                             help='User you would like to include. '
                                  'This can be passed multiple times.')
 
 github_user = click.option('-U', '--user', default=None, help='GitHub username')
-
 github_password = click.option('-P', '--password', default=None,
                                help='GitHub password')
 
