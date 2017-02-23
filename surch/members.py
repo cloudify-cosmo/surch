@@ -64,7 +64,8 @@ def check_user_list(users_to_check, members_list,
 def search(git_user, git_password, organization_name, search_list,
            results_file_path=None, cloned_repos_dir=None,
            users_to_skip=None, users_to_check=None, consolidate_log=False,
-           remove_clones_dir=False, verbose=False):
+           remove_clones_dir=False, verbose=False, remove_per_repo=False,
+           remove_per_member=False):
 
     logger = utils.set_logger(verbose)
 
@@ -88,6 +89,8 @@ def search(git_user, git_password, organization_name, search_list,
                             results_file_path=results_file_path,
                             cloned_repos_dir=cloned_repos_dir,
                             consolidate_log=True, remove_clones_dir=False,
-                            verbose=verbose, from_members=True)
+                            verbose=verbose, from_members=True,
+                            remove_per_repo=remove_per_repo,
+                            remove_per_member=remove_per_member)
 
     utils._remove_repos_folder(cloned_repos_dir, remove_clones_dir)

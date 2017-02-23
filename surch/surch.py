@@ -50,6 +50,20 @@ remove_clone = click.option('-R', '--remove', default=False, is_flag=True,
                             help='Remove clone repo directory.\n'
                                  'Don\'t used when -p and -l is the same path.')
 
+remove_member_clone = click.option('--remove-member-clone', default=False,
+                                 is_flag=True,
+                                 help='Remove member clone directory '
+                                      'after finish check him.\n '
+                                      'Don\'t used when -p and -l is '
+                                      'the same path.')
+
+remove_repo_clone = click.option('--remove-repo-clone', default=False,
+                                 is_flag=True,
+                                 help='Remove clone repo directory '
+                                      'after finish to check him.\n'
+                                      'Don\'t used when -p and -l is '
+                                      'the same path.')
+
 pager = click.option('--pager', multiple=True, default=[],
                      help='Pager plugin to use')
 
@@ -124,12 +138,14 @@ def surch_repo(repo_url, cloned_repos_dir, string, log, verbose, remove):
 @github_password
 @exclude_repo
 @include_repo
+@remove_repo_clone
 # @config_file
 # @pager
 # @source
 # @printout
 def surch_org(organization_name, string, include_repo, exclude_repo, user,
-              remove, password, cloned_repos_dir, log, verbose):
+              remove, password, cloned_repos_dir, log, verbose,
+              remove_repo_clone):
     """Search all or some repositories in an organization
     """
     try:
@@ -140,7 +156,8 @@ def surch_org(organization_name, string, include_repo, exclude_repo, user,
                             cloned_repos_dir=cloned_repos_dir,
                             repos_to_skip=exclude_repo,
                             repos_to_check=include_repo,
-                            remove_clones_dir=remove, verbose=verbose)
+                            remove_clones_dir=remove, verbose=verbose,
+                            remove_per_repo=remove_repo_clone)
     except SurchError as ex:
         sys.exit(ex)
 
@@ -156,6 +173,7 @@ def surch_org(organization_name, string, include_repo, exclude_repo, user,
 @github_password
 @exclude_repo
 @include_repo
+@remove_repo_clone
 # @config_file
 # @pager
 # @source
@@ -171,7 +189,8 @@ def surch_user(username, string, include_repo, exclude_repo, user, remove,
                             cloned_repos_dir=cloned_repos_dir,
                             repos_to_skip=exclude_repo,
                             repos_to_check=include_repo,
-                            remove_clones_dir=remove, verbose=verbose)
+                            remove_clones_dir=remove, verbose=verbose,
+                            remove_per_repo=remove_repo_clone)
     except SurchError as ex:
         sys.exit(ex)
 
@@ -187,12 +206,15 @@ def surch_user(username, string, include_repo, exclude_repo, user, remove,
 @github_password
 @exclude_user
 @include_user
+@remove_repo_clone
+@remove_member_clone
 # @config_file
 # @pager
 # @source
 # @printout
 def surch_org_members(organization_name, string, include_user, exclude_user,
-                      user, remove, password, cloned_repos_dir, log, verbose):
+                      user, remove, password, cloned_repos_dir, log, verbose,
+                      remove_repo_clone, remove_member_clone):
     """Search all or some members in an organization
     """
     try:
@@ -200,6 +222,8 @@ def surch_org_members(organization_name, string, include_user, exclude_user,
                        organization_name=organization_name, search_list=string,
                        results_file_path=log, cloned_repos_dir=cloned_repos_dir,
                        users_to_skip=exclude_user, users_to_check=include_user,
-                       remove_clones_dir=remove, verbose=verbose)
+                       remove_clones_dir=remove, verbose=verbose,
+                       remove_per_repo=remove_repo_clone,
+                       remove_per_member=remove_member_clone)
     except SurchError as ex:
         sys.exit(ex)

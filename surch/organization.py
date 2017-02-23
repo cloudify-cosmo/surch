@@ -119,13 +119,16 @@ def _get_repo_include_list(all_repos, repos_to_include=None,
 def search(git_item_name, git_user, git_password, search_list,
            is_organization=True, results_file_path=None, cloned_repos_dir=None,
            repos_to_skip=None, repos_to_check=None, consolidate_log=False,
-           remove_clones_dir=False, verbose=False, from_members=False):
+           remove_clones_dir=False, verbose=False, from_members=False,
+           remove_per_repo=False, remove_per_member=False):
 
     logger = utils.set_logger(verbose)
     utils.handle_results_file(results_file_path, consolidate_log)
 
     cloned_repos_dir = cloned_repos_dir or os.path.join(
         constants.CLONED_REPOS_PATH, git_item_name)
+    if from_members:
+        cloned_repos_dir = os.path.join(cloned_repos_dir, git_item_name)
 
     repos_data = _get_all_repos_list(git_user, git_password, git_item_name,
                                      is_organization, logger)
@@ -137,6 +140,7 @@ def search(git_item_name, git_user, git_password, search_list,
                     results_file_path=results_file_path,
                     cloned_repo_dir=cloned_repos_dir, verbose=verbose,
                     remove_clone_dir=False, consolidate_log=True,
-                    from_org=True, from_members=from_members)
+                    from_org=True, remove_per_repo=remove_per_repo)
 
     utils._remove_repos_folder(cloned_repos_dir, remove_clones_dir)
+    utils._remove_repos_folder(cloned_repos_dir, remove_per_member)
