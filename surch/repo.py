@@ -15,14 +15,11 @@
 
 import os
 import subprocess
-# from time import time
 
 import retrying
 from tinydb import TinyDB
 
-# from .plugins import handler
 from . import utils, constants
-# from .exceptions import SurchError
 
 
 def _run_command_without_output(command, repo_name, logger=utils.logger):
@@ -106,8 +103,8 @@ def _search_commit(cloned_repo_dir, commit, search_string):
     """
     try:
         matched_files = subprocess.check_output(
-            'git -C {0} grep -c -e {1} {2}'.format(cloned_repo_dir,
-                                                   search_string, commit),
+            'git -C {0} grep -c -e {1} {2}'.format(
+                cloned_repo_dir, search_string, commit),
             shell=True).splitlines()
         branches_names = subprocess.check_output(
             'git  -C {0} branch --contains {1}'.format(cloned_repo_dir, commit),
@@ -193,16 +190,19 @@ def _get_user_details(cloned_repo_dir, sha):
 
 def search(repo_url, search_list, results_file_path=None, cloned_repo_dir=None,
            verbose=False, remove_clone_dir=False, consolidate_log=False,
-           from_org=False, **kwargs):
+           from_org=False, from_members=False, **kwargs):
     """API method init repo instance and search strings
     """
-    # utils.check_string_list(search_list)
+    utils.check_string_list(search_list)
     logger = utils.set_logger(verbose)
     utils.handle_results_file(results_file_path, consolidate_log)
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
 
     cloned_repo_dir = cloned_repo_dir or os.path.join(
         constants.CLONED_REPOS_PATH, organization, repo_name)
+    if from_members:
+        cloned_repo_dir = os.path.join(cloned_repo_dir, organization, repo_name)
+        from_org = False
     if from_org:
         cloned_repo_dir = os.path.join(cloned_repo_dir, repo_name)
 

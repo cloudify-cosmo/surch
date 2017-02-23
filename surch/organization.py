@@ -15,12 +15,9 @@
 
 import os
 import sys
-import logging
 
 import requests
 
-from .plugins import handler
-from .exceptions import SurchError
 from . import repo, utils, constants
 
 
@@ -65,7 +62,7 @@ def _get_all_repos_list(git_user, git_password, git_item_name,
     """
     git_item_type = 'orgs' if is_organization else 'users'
     logger.info('Retrieving repository information for this {0}{1}...'.format(
-        'organization:' if is_organization else 'user:', git_item_name))
+        'organization: ' if is_organization else 'user: ', git_item_name))
     git_credentials = _set_git_credentials(git_user, git_password, logger)
     org_data = _get_org_data(git_item_type, git_item_name,
                              git_credentials, logger)
@@ -96,7 +93,7 @@ def _get_org_data(git_item_type, organization,
     return response.json()
 
 
-def get_repo_include_list(all_repos, repos_to_include=None,
+def _get_repo_include_list(all_repos, repos_to_include=None,
                           repos_to_exclude=None, logger=utils.logger):
     """ Get include or exclude repositories list ,
     return repositories list to search on"""
@@ -119,10 +116,10 @@ def get_repo_include_list(all_repos, repos_to_include=None,
     return repo_url_list
 
 
-def search(git_item_name, git_user, git_password,
-           search_list, is_organization=True, results_file_path=None, cloned_repos_dir=None,
-           repos_to_skip=None, repos_to_check=None, consolidate_log=True,
-           remove_clones_dir=False, verbose=False):
+def search(git_item_name, git_user, git_password, search_list,
+           is_organization=True, results_file_path=None, cloned_repos_dir=None,
+           repos_to_skip=None, repos_to_check=None, consolidate_log=False,
+           remove_clones_dir=False, verbose=False, from_members=False):
 
     logger = utils.set_logger(verbose)
     utils.handle_results_file(results_file_path, consolidate_log)
@@ -132,14 +129,14 @@ def search(git_item_name, git_user, git_password,
 
     repos_data = _get_all_repos_list(git_user, git_password, git_item_name,
                                      is_organization, logger)
-    repos_url_list = get_repo_include_list(all_repos=repos_data,
-                                           repos_to_include=repos_to_check,
-                                           repos_to_exclude=repos_to_skip)
+    repos_url_list = _get_repo_include_list(all_repos=repos_data,
+                                            repos_to_include=repos_to_check,
+                                            repos_to_exclude=repos_to_skip)
     for repo_url in repos_url_list:
         repo.search(repo_url=repo_url, search_list=search_list,
                     results_file_path=results_file_path,
                     cloned_repo_dir=cloned_repos_dir, verbose=verbose,
-                    remove_clone_dir=False, consolidate_log=consolidate_log,
-                    from_org=True)
+                    remove_clone_dir=False, consolidate_log=True,
+                    from_org=True, from_members=from_members)
 
     utils._remove_repos_folder(cloned_repos_dir, remove_clones_dir)

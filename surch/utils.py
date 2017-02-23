@@ -128,8 +128,7 @@ def find_string_between_strings(string, first, last):
 
 def check_string_list(search_list):
     if len(search_list) == 0:
-        logger.error('You must supply at least one string to search for.')
-    sys.exit(1)
+        raise SurchError('You must supply at least one string to search for...')
 
 
 def assert_executable_exists(executable):
@@ -145,5 +144,5 @@ def handle_results_file(results_file_path, consolidate_log):
             new_log_file = results_file_path + '.' + timestamp
             logger.info(
                 'Previous results file found. Backing up '
-                'to {0}'.format(new_log_file))
+                'to {0}...'.format(new_log_file))
             shutil.move(results_file_path, new_log_file)
