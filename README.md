@@ -38,12 +38,14 @@ $ surch --help
 Usage: surch [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --help  Show this message and exit.
+  -h, --help  Show this message and exit.
 
 Commands:
-  org   Search all or some repositories in an...
-  repo  Search a single repository
-  user  Search all or some repositories for a user
+  members  Search all or some members in an organization
+  org      Search all or some repositories in an...
+  repo     Search a single repository.
+  user     Search all or some repositories in an...
+
 
 ```
 
@@ -55,8 +57,8 @@ $ surch repo http://github.com/cloudify-cosmo/surch --string Surch --string Burc
 
 2016-07-14 08:41:57,769 - surch - INFO - Pulling repo: surch...
 2016-07-14 08:41:58,540 - surch - INFO - Scanning repo surch for 2 string(s)...
-2016-07-14 08:41:59,579 - surch - INFO - Writing results to: ~/.surch/results/results.json...
-2016-07-14 08:42:13,008 - surch - INFO - Found 603 results in 123 commits.
+2016-07-14 08:41:59,579 - surch - INFO - Writing results to: ~/.surch/results/results.db...
+2016-07-14 08:42:13,008 - surch - INFO - Found 0 files with your strings.
 
 ...
 
@@ -66,9 +68,14 @@ $ cat ~/.surch/results/results.json
 {
     "_default": {
         "1": {
-            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/46a5321e902c0bad927458f94825ec7ca0aab128/README.md",
-            "commit_sha": "46a5321e902c0bad927458f94825ec7ca0aab128",
-            "commit_time": "Tue Jul 12 10:15:30 2016",
+            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/72b389d6a9a393174a514a1cdb20d288deac7024/README.md",
+            "branches_names": [
+                "error-handling",
+                "master",
+                "plugins_tests"
+            ],
+            "commit_sha": "72b389d6a9a393174a514a1cdb20d288deac7024",
+            "commit_time": "Thu Jul 14 08:55:40 2016",
             "email": "Havivv1305@gmail.com",
             "filepath": "README.md",
             "organization_name": "cloudify-cosmo",
@@ -76,15 +83,19 @@ $ cat ~/.surch/results/results.json
             "username": "haviv"
         },
         "2": {
-            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/46a5321e902c0bad927458f94825ec7ca0aab128/README.rst",
-            "commit_sha": "46a5321e902c0bad927458f94825ec7ca0aab128",
-            "commit_time": "Tue Jul 12 10:15:30 2016",
+            "blob_url": "https://github.com/cloudify-cosmo/surch/blob/21444d12ec84fafd63796e14f51900da5c4bedd7/README.md",
+            "branches_names": [
+                "error-handling"
+            ],
+            "commit_sha": "21444d12ec84fafd63796e14f51900da5c4bedd7",
+            "commit_time": "Tue Feb 21 13:01:15 2017",
             "email": "Havivv1305@gmail.com",
-            "filepath": "README.rst",
+            "filepath": "README.md",
             "organization_name": "cloudify-cosmo",
             "repository_name": "surch",
             "username": "haviv"
         },
+
         ...
     }
 }
@@ -103,8 +114,28 @@ $ surch user havivw --string surch
 2016-07-14 08:47:17,727 - surch - INFO - Previous results file found. Backing up to ~/.surch/results/results.json.20160714T084717
 2016-07-14 08:47:17,729 - surch - INFO - Cloning repo cloudify-interactive-tutorial from org Havivw to ~/.surch/clones/cloudify-interactive-tutorial...
 2016-07-14 08:47:22,677 - surch - INFO - Scanning repo cloudify-interactive-tutorial for 1 string(s)...
-2016-07-14 08:47:23,215 - surch - INFO - Writing results to: ~/.surch/results/results.json...
-2016-07-14 08:47:23,215 - surch - INFO - Found 0 results in 45 commits.
+2016-07-14 08:47:23,215 - surch - INFO - Writing results to: ~/.surch/results/results.db...
+2016-07-14 08:47:23,215 - surch - INFO - Found 0 files with your strings.
+...
+
+```
+
+### Search an entire organization members repositories
+
+NOTE: to search in all members an organization
+
+```shell
+$ surch members cloudify-cosmo -U <username> -P <password> --string surch
+...
+
+2017-02-23 20:45:40,015 - Surch - INFO - Get members list from organization cloudify-cosmo...
+2017-02-23 20:45:42,499 - Surch - INFO - Retrieving repository information for this user: Havivw...
+2017-02-23 20:45:44,078 - Surch - INFO - Cloning repo cloudify-interactive-tutorial from org/user Havivw to ~/.surch/clones/cloudify-cosmo/Havivw/cloudify-interactive-tutorial...
+2017-02-23 20:45:48,721 - Surch - INFO - Found 45 commits in cloudify-interactive-tutorial...
+2017-02-23 20:45:48,721 - Surch - INFO - Scanning repo cloudify-interactive-tutorial for 1 string(s)...
+2017-02-23 20:45:49,282 - Surch - INFO - Writing results to: /home/haviv/.surch/results/results.db...
+2017-02-23 20:45:49,282 - Surch - INFO - Found 0 files with your strings...
+
 ...
 
 ```
