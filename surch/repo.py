@@ -20,6 +20,7 @@ import retrying
 from tinydb import TinyDB
 
 from . import utils, constants
+from .exceptions import SurchError
 
 
 def _run_command_without_output(command, repo_name, logger=utils.logger):
@@ -27,9 +28,9 @@ def _run_command_without_output(command, repo_name, logger=utils.logger):
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         proc.stdout, proc.stderr = proc.communicate()
     except subprocess.CalledProcessError as git_error:
-        err = 'Failed execute {0} on repo {1} ({2})'.format(command, repo_name,
-                                                            git_error)
-        logger.error(err)
+        logger.error('Failed execute {0} on repo {1} ({2})'.format(
+            command, repo_name, git_error))
+        raise SurchError
 
 
 def _order_branches_list(branches_names):
@@ -214,12 +215,15 @@ def search(repo_url, search_list, results_file_path=None, cloned_repo_dir=None,
                                           repo_name, from_org, from_members)
 
     results_file_path = results_file_path or constants.RESULTS_PATH
+
     _get_repo(repo_url, cloned_repo_dir, repo_name, organization, logger)
+
     commits_list = _get_all_commits_from_all_branches(cloned_repo_dir,
                                                       repo_name, logger)
 
     results = _search(search_list, commits_list, cloned_repo_dir, repo_name,
                       logger)
+
     _write_results(results, cloned_repo_dir, results_file_path,
                    repo_name, organization, logger)
 

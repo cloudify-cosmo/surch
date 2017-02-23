@@ -48,32 +48,38 @@ def get_members_list(user, password, organization_name, logger=utils.logger):
     return list(set(members_list))
 
 
-def check_user_list(users_to_check, members_list):
+def check_user_list(users_to_check, members_list,
+                    organization_name, logger=utils.logger):
     not_exists = []
     for user in users_to_check:
         if user not in members_list:
             not_exists.append(user.encode('ascii'))
-    return not_exists
+    if not_exists:
+        logger.info('The following users "{0}" do not exist in the '
+                    'organization {1}... '
+                    '(check if username is case sensitive)...'.format(
+            not_exists, organization_name))
 
 
 def search(git_user, git_password, organization_name, search_list,
            results_file_path=None, cloned_repos_dir=None,
            users_to_skip=None, users_to_check=None, consolidate_log=False,
            remove_clones_dir=False, verbose=False):
+
     logger = utils.set_logger(verbose)
+
     utils.handle_results_file(results_file_path, consolidate_log)
+
     cloned_repos_dir = cloned_repos_dir or os.path.join(
         constants.CLONED_REPOS_PATH, organization_name)
+
     all_members = get_members_list(git_user, git_password,
                                    organization_name, logger)
+
     members_list = _get_user_include_list(all_members, users_to_check,
                                           users_to_skip)
-    not_exists_users = check_user_list(users_to_check, members_list)
-    if not_exists_users:
-        logger.info('The following users "{0}" do not exist in the '
-                    'organization {1}... '
-                    '(check if username is case sensitive)...'.format(
-            not_exists_users, organization_name))
+
+    check_user_list(users_to_check, members_list, organization_name, logger)
 
     for member in members_list:
         organization.search(git_item_name=member,
@@ -83,4 +89,5 @@ def search(git_user, git_password, organization_name, search_list,
                             cloned_repos_dir=cloned_repos_dir,
                             consolidate_log=True, remove_clones_dir=False,
                             verbose=verbose, from_members=True)
+
     utils._remove_repos_folder(cloned_repos_dir, remove_clones_dir)

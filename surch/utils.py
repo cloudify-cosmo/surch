@@ -128,13 +128,15 @@ def find_string_between_strings(string, first, last):
 
 def check_string_list(search_list):
     if len(search_list) == 0:
-        raise SurchError('You must supply at least one string to search for...')
+        logger.error('You must supply at least one string to search for...')
+        raise SurchError
 
 
 def assert_executable_exists(executable):
     if not find_executable(executable):
-        raise SurchError(
-            '{0} executable not found and is required'.format(executable))
+        logger.error('{0} executable not found and is '
+                     'required'.format(executable))
+        raise SurchError
 
 
 def handle_results_file(results_file_path, consolidate_log):

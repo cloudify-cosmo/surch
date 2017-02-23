@@ -14,10 +14,10 @@
 #    * limitations under the License.
 
 import os
-import sys
 
 import requests
 
+from .exceptions import SurchError
 from . import repo, utils, constants
 
 
@@ -35,7 +35,7 @@ def get_repos_list_per_page(git_item_type, organization, git_credentials,
         return response.json()
     except (requests.ConnectionError, requests.Timeout) as error:
         logger.error(error)
-        sys.exit(1)
+        raise SurchError
 
 
 def _parse_repo_data(repo_data):
@@ -89,7 +89,7 @@ def _get_org_data(git_item_type, organization,
         logger.error('The organization or user {0} could not be found. '
                      'Please make sure you use the correct type '
                      '(org/user).'.format(organization))
-        sys.exit(1)
+        raise SurchError
     return response.json()
 
 
@@ -99,7 +99,7 @@ def _get_repo_include_list(all_repos, repos_to_include=None,
     return repositories list to search on"""
     if repos_to_exclude and repos_to_include:
         logger.error('You can not both include and exclude repositories.')
-        sys.exit(1)
+        raise SurchError
     repo_url_list = []
     if repos_to_include:
         for repo_name in repos_to_include:
