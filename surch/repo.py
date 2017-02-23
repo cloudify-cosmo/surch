@@ -188,6 +188,18 @@ def _get_user_details(cloned_repo_dir, sha):
     return name, email, commit_time
 
 
+def set_cloned_repo_dir(cloned_repo_dir, organization, repo_name,
+                        from_org, from_members):
+    cloned_repo_dir = cloned_repo_dir or os.path.join(
+        constants.CLONED_REPOS_PATH, organization, repo_name)
+    if from_members:
+        cloned_repo_dir = os.path.join(cloned_repo_dir, organization, repo_name)
+        from_org = False
+    if from_org:
+        cloned_repo_dir = os.path.join(cloned_repo_dir, repo_name)
+    return cloned_repo_dir
+
+
 def search(repo_url, search_list, results_file_path=None, cloned_repo_dir=None,
            verbose=False, remove_clone_dir=False, consolidate_log=False,
            from_org=False, from_members=False, **kwargs):
@@ -198,13 +210,8 @@ def search(repo_url, search_list, results_file_path=None, cloned_repo_dir=None,
     utils.handle_results_file(results_file_path, consolidate_log)
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
 
-    cloned_repo_dir = cloned_repo_dir or os.path.join(
-        constants.CLONED_REPOS_PATH, organization, repo_name)
-    if from_members:
-        cloned_repo_dir = os.path.join(cloned_repo_dir, organization, repo_name)
-        from_org = False
-    if from_org:
-        cloned_repo_dir = os.path.join(cloned_repo_dir, repo_name)
+    cloned_repo_dir = set_cloned_repo_dir(cloned_repo_dir, organization,
+                                          repo_name, from_org, from_members)
 
     results_file_path = results_file_path or constants.RESULTS_PATH
     _get_repo(repo_url, cloned_repo_dir, repo_name, organization, logger)
