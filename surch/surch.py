@@ -19,7 +19,7 @@ import click
 
 from . import utils
 from . import constants
-from . import repo, organization, members
+from . import commit, repo, organization, members
 from .exceptions import SurchError
 
 utils._create_surch_env()
@@ -95,6 +95,29 @@ verbose = click.option('-v', '--verbose', default=False, is_flag=True)
 @click.group(context_settings=CLICK_CONTEXT_SETTINGS)
 def main():
     pass
+
+@main.command(name='commit')
+@click.argument('commit_sha',
+                required=True)
+@search_string
+@cloned_repos_dir
+@log_path
+@verbose
+# @config_file
+# @log_path
+# @pager
+# @source
+# @printout
+def surch_commit(commit_sha, cloned_repos_dir, string, log, verbose):
+    """Search a single commit.
+         "surch commit 08123a835a5344645fasdb015f786088045652c8 -p /home/user/surch -s hello"
+        """
+    try:
+        commit.search(search_list=string, commit_sha=commit_sha,
+                      cloned_repo_dir=cloned_repos_dir,
+                      results_file_path=log, verbose=verbose)
+    except SurchError as ex:
+        sys.exit(ex)
 
 
 @main.command(name='repo')

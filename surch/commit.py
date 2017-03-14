@@ -33,9 +33,8 @@ def _fetch_all_branches(cloned_repo_dir, repo_name, logger=utils.logger):
                                              repo_name, logger)
 
 
-def search_on_single_commit(search_list, commit_sha, cloned_repo_dir,
-                            results_file_path=None, verbose=False,
-                            consolidate_log=False):
+def search(search_list, commit_sha, cloned_repo_dir, results_file_path=None,
+           verbose=False, consolidate_log=False):
     logger = utils.set_logger(verbose)
     if not os.path.isdir(cloned_repo_dir):
         logger.error('Failed execute {0} directory not exist.)'.format(cloned_repo_dir))
