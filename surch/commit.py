@@ -37,11 +37,13 @@ def search(search_list, commit_sha, cloned_repo_dir, results_file_path=None,
            verbose=False, consolidate_log=False):
     logger = utils.set_logger(verbose)
     if not os.path.isdir(cloned_repo_dir):
-        logger.error('Failed execute {0} directory not exist.)'.format(cloned_repo_dir))
+        logger.error('Failed execute {0} '
+                     'directory not exist.)'.format(cloned_repo_dir))
         raise SurchError
 
     utils.check_string_list(search_list)
-    repo_url = subprocess.check_output('git -C {0} ls-remote --get-url'.format(cloned_repo_dir), shell=True)
+    repo_url = subprocess.check_output(
+        'git -C {0} ls-remote --get-url'.format(cloned_repo_dir), shell=True)
     repo_name, organization = utils._get_repo_and_organization_name(repo_url)
     _fetch_all_branches(cloned_repo_dir, repo_name, logger)
     results_file_path = results_file_path or constants.RESULTS_PATH
