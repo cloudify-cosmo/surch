@@ -14,7 +14,10 @@
 #    * limitations under the License.
 
 import os
+import requests
 import subprocess
+
+from tinydb import TinyDB
 
 from .exceptions import SurchError
 from . import repo, utils, constants
@@ -31,6 +34,20 @@ def _fetch_all_branches(cloned_repo_dir, repo_name, logger=utils.logger):
                 cloned_repo_dir, name)
             repo._run_command_without_output(git_checkout_command,
                                              repo_name, logger)
+
+
+def _write_results(files_list, results_file_path, logger=utils.logger):
+    """Write the result to DB
+    """
+    result_count = 0
+    db = TinyDB(results_file_path, indent=4,
+                sort_keys=True, separators=(',', ': '))
+
+    logger.info('Writing results to: {0}...'.format(results_file_path))
+    for file in files_list:
+        result_count += 1
+        db.insert(file)
+    logger.info('Found {0} files with your strings...'.format(result_count))
 
 
 def search(search_list, commit_sha, cloned_repo_dir, results_file_path=None,
@@ -53,3 +70,60 @@ def search(search_list, commit_sha, cloned_repo_dir, results_file_path=None,
                                              search_string)]
     repo._write_results(results, cloned_repo_dir, results_file_path,
                         repo_name, organization, logger)
+
+
+def web_search(owner_name, repo_name, search_list, commit_sha,
+               git_user=None, git_password=None, results_file_path=None,
+               verbose=False, consolidate_log=False):
+
+    logger = utils.set_logger(verbose)
+    files_list = []
+    if not git_user or not git_password:
+        logger.error('Choosing not to provide GitHub credentials limits '
+                     'requests to GitHub to 60/h. This might affect cloning.')
+        raise SurchError
+
+    results_file_path = results_file_path or constants.RESULTS_PATH
+    utils.handle_results_file(results_file_path, consolidate_log)
+
+    url = "https://api.github.com/repos/{0}/{1}/git/trees/{2}".format(
+        owner_name, repo_name, commit_sha)
+    get_data = requests.get(url, auth=(git_user, git_password))
+    all_data = get_data.json()
+    for tree in all_data['tree']:
+        logger.info('Checking this {0} path now...'.format(tree['path']))
+        data_files = requests.get(tree['url'], auth=(git_user, git_password))
+        data_files = data_files.json()
+        try:
+            decode_data_file = data_files['content'].decode('base64')
+            for string in search_list:
+                if string in decode_data_file:
+                    filepath = tree['path']
+                    url = 'https://api.github.com/repos/{0}/' \
+                          '{1}/commits/{2}'.format(owner_name, repo_name,
+                                                   commit_sha)
+                    commit_data = requests.get(url, auth=(git_user,
+                                                          git_password))
+                    commit_details = commit_data.json()['commit']['author']
+                    commit_time = commit_details['date']
+                    email = commit_details['email']
+                    username = \
+                        (commit_data.json()['author']['login']).decode('ascii')
+
+                    result = dict(email=email,
+                                  string=string,
+                                  filepath=filepath,
+                                  username=username,
+                                  commit_sha=commit_sha,
+                                  commit_time=commit_time,
+                                  repository_name=repo_name,
+                                  owner_name=owner_name,
+                                  blob_url=
+                                  constants.GITHUB_BLOB_URL.format(owner_name,
+                                                                   repo_name,
+                                                                   commit_sha,
+                                                                   filepath))
+                    files_list.append(result)
+        except KeyError:
+            pass
+    _write_results(files_list, results_file_path, logger)

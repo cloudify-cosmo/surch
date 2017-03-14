@@ -88,6 +88,9 @@ github_user = click.option('-U', '--user', default=None, help='GitHub username')
 github_password = click.option('-P', '--password', default=None,
                                help='GitHub password')
 
+owner = click.option('-o', '--owner', default=None, help='GitHub organization\user')
+repo_name = click.option('-r', '--repo', default=None, help='GitHub commit repo name')
+
 printout = click.option('--print-result', default=False, is_flag=True)
 verbose = click.option('-v', '--verbose', default=False, is_flag=True)
 
@@ -95,6 +98,35 @@ verbose = click.option('-v', '--verbose', default=False, is_flag=True)
 @click.group(context_settings=CLICK_CONTEXT_SETTINGS)
 def main():
     pass
+
+
+@main.command(name='online')
+@click.argument('commit_sha',
+                required=True)
+@search_string
+@log_path
+@verbose
+@owner
+@repo_name
+@github_user
+@github_password
+# @config_file
+# @log_path
+# @pager
+# @source
+# @printout
+def surch_commit(commit_sha, repo, owner,  user, password,  string, log,
+                 verbose):
+    """Search a single commit online.
+        """
+    try:
+        commit.web_search(owner_name=owner, repo_name=repo,
+                          search_list=string, commit_sha=commit_sha,
+                          git_user=user, git_password=password,
+                          results_file_path=log, verbose=verbose)
+    except SurchError as ex:
+        sys.exit(ex)
+
 
 @main.command(name='commit')
 @click.argument('commit_sha',
