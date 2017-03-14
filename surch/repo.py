@@ -99,7 +99,7 @@ def _create_search_string(search_list,
     return search_string
 
 
-def _search_commit(cloned_repo_dir, commit, search_string):
+def search_strings_in_commit(cloned_repo_dir, commit, search_string):
     """Run git grep on the commit
     """
     try:
@@ -127,8 +127,9 @@ def _search(search_list, commits, cloned_repo_dir, repo_name,
     logger.info('Scanning repo {0} for {1} string(s)...'.format(
         repo_name, len(search_list)))
     for commit in commits:
-        matched_files_and_branches = _search_commit(cloned_repo_dir, commit,
-                                                    search_string)
+        matched_files_and_branches = search_strings_in_commit(cloned_repo_dir,
+                                                              commit,
+                                                              search_string)
         matching_commits.append(matched_files_and_branches)
 
     return matching_commits
@@ -155,8 +156,8 @@ def _write_results(results, cloned_repo_dir, results_file_path,
                               username=username,
                               commit_sha=commit_sha,
                               commit_time=commit_time,
-                              branches_names=branches_names,
                               repository_name=repo_name,
+                              branches_names=branches_names,
                               organization_name=organization,
                               blob_url=constants.GITHUB_BLOB_URL.format(
                                   organization,
@@ -184,11 +185,9 @@ def _get_user_details(cloned_repo_dir, sha):
         'git -C {0} show -s  {1}'.format(cloned_repo_dir, sha), shell=True)
     name = utils.find_string_between_strings(details, 'Author: ', ' <')
     email = utils.find_string_between_strings(details, '<', '>')
-    commit_time = utils.find_string_between_strings(details,
-                                                    'Date:   ', '+').strip()
+    commit_time = utils.find_string_between_strings(details, 'Date:   ',
+                                                    '+').strip()
     return name, email, commit_time
-
-
 
 
 def search(repo_url, search_list, results_file_path=None, cloned_repo_dir=None,
