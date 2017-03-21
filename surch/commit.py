@@ -1,5 +1,5 @@
 ########
-# Copyright (c) 2016 GigaSpaces Technologies Ltd. All rights reserved
+# Copyright (c) 2017 GigaSpaces Technologies Ltd. All rights reserved
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,6 +50,41 @@ def _write_results(files_list, results_file_path, logger=utils.logger):
     logger.info('Found {0} files with your strings...'.format(result_count))
 
 
+def search_and_decode_data(filename, url, search_list, owner_name,
+                           repo_name, commit_sha, git_user, git_password,
+                           files_list, logger=utils.logger):
+    data_files = requests.get(url, auth=(git_user, git_password))
+    data_files = data_files.json()
+    try:
+        decode_data_file = data_files['content'].decode('base64')
+        for string in search_list:
+            if string in decode_data_file:
+                filepath = filename
+                url = 'https://api.github.com/repos/{0}/{1}/commits/' \
+                      '{2}'.format(owner_name, repo_name, commit_sha)
+                commit_data = requests.get(url, auth=(git_user, git_password))
+                commit_details = commit_data.json()['commit']['author']
+                commit_time = commit_details['date']
+                email = commit_details['email']
+                username = \
+                    (commit_data.json()['author']['login']).decode('ascii')
+
+                result = dict(email=email, string=string, filepath=filepath,
+                              username=username, commit_sha=commit_sha,
+                              commit_time=commit_time,
+                              repository_name=repo_name,
+                              owner_name=owner_name,
+                              blob_url=constants.GITHUB_BLOB_URL.format(
+                                  owner_name, repo_name, commit_sha, filepath))
+                files_list.append(result)
+    except KeyError:
+        for tree in data_files['tree']:
+            logger.info('Checking this {0} file now...'.format(tree['path']))
+            search_and_decode_data(tree['path'], tree['url'], search_list,
+                                   owner_name, repo_name, commit_sha, git_user,
+                                   git_password, files_list)
+
+
 def search(search_list, commit_sha, cloned_repo_dir, results_file_path=None,
            verbose=False, consolidate_log=False):
     logger = utils.set_logger(verbose)
@@ -91,39 +126,8 @@ def web_search(owner_name, repo_name, search_list, commit_sha,
     get_data = requests.get(url, auth=(git_user, git_password))
     all_data = get_data.json()
     for tree in all_data['tree']:
-        logger.info('Checking this {0} path now...'.format(tree['path']))
-        data_files = requests.get(tree['url'], auth=(git_user, git_password))
-        data_files = data_files.json()
-        try:
-            decode_data_file = data_files['content'].decode('base64')
-            for string in search_list:
-                if string in decode_data_file:
-                    filepath = tree['path']
-                    url = 'https://api.github.com/repos/{0}/' \
-                          '{1}/commits/{2}'.format(owner_name, repo_name,
-                                                   commit_sha)
-                    commit_data = requests.get(url, auth=(git_user,
-                                                          git_password))
-                    commit_details = commit_data.json()['commit']['author']
-                    commit_time = commit_details['date']
-                    email = commit_details['email']
-                    username = \
-                        (commit_data.json()['author']['login']).decode('ascii')
-
-                    result = dict(email=email,
-                                  string=string,
-                                  filepath=filepath,
-                                  username=username,
-                                  commit_sha=commit_sha,
-                                  commit_time=commit_time,
-                                  repository_name=repo_name,
-                                  owner_name=owner_name,
-                                  blob_url=
-                                  constants.GITHUB_BLOB_URL.format(owner_name,
-                                                                   repo_name,
-                                                                   commit_sha,
-                                                                   filepath))
-                    files_list.append(result)
-        except KeyError:
-            pass
+        logger.info('Checking this {0} file now...'.format(tree['path']))
+        search_and_decode_data(tree['path'], tree['url'], search_list,
+                               owner_name, repo_name, commit_sha,
+                               git_user, git_password, files_list, logger)
     _write_results(files_list, results_file_path, logger)
