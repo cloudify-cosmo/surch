@@ -30,8 +30,8 @@ def get_repos_list_per_page(git_item_type, organization, git_credentials,
     try:
         response = requests.get(
             constants.GITHUB_REPO_DETAILS_API_URL.format(git_item_type,
-                                                         organization, 'public',
-                                                         page_num),
+                                                         organization,
+                                                         'public', page_num),
             auth=git_credentials)
 
         return response.json()
@@ -47,7 +47,8 @@ def _parse_repo_data(repo_data):
             for data in repo_data]
 
 
-def _set_git_credentials(git_user=None, git_password=None, logger=utils.logger):
+def _set_git_credentials(git_user=None, git_password=None,
+                         logger=utils.logger):
     if not git_user or not git_password:
         logger.warn('Choosing not to provide GitHub credentials limits '
                     'requests to GitHub to 60/h. This might affect cloning.')
@@ -96,9 +97,10 @@ def _get_org_data(git_item_type, organization,
 
 
 def _get_repo_include_list(all_repos, repos_to_include=None,
-                          repos_to_exclude=None, logger=utils.logger):
+                           repos_to_exclude=None, logger=utils.logger):
     """ Get include or exclude repositories list ,
     return repositories list to search on"""
+
     if repos_to_exclude and repos_to_include:
         logger.error('You can not both include and exclude repositories.')
         raise SurchError

@@ -35,10 +35,12 @@ def get_members_list_by_page(user, password, organization_name, page):
 
 
 def get_members_list(user, password, organization_name, logger=utils.logger):
-    logger.info('Get members list from organization {0}...'.format(organization_name))
+    logger.info('Get members list from organization '
+                '{0}...'.format(organization_name))
     members_list = []
     page = 0
-    all_data = get_members_list_by_page(user, password, organization_name, page)
+    all_data = get_members_list_by_page(user, password,
+                                        organization_name, page)
     while len(all_data) != 0:
         for member in all_data:
             members_list.append(member['login'].encode('ascii'))
@@ -56,9 +58,8 @@ def check_user_list(users_to_check, members_list,
             not_exists.append(user.encode('ascii'))
     if not_exists:
         logger.info('The following users "{0}" do not exist in the '
-                    'organization {1}... '
-                    '(check if username is case sensitive)...'.format(
-            not_exists, organization_name))
+                    'organization {1}... (check if username is '
+                    'case sensitive)...'.format(not_exists, organization_name))
 
 
 def search(git_user, git_password, organization_name, search_list,

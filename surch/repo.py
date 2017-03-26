@@ -108,7 +108,8 @@ def search_strings_in_commit(cloned_repo_dir, commit, search_string):
                 cloned_repo_dir, search_string, commit),
             shell=True).splitlines()
         branches_names = subprocess.check_output(
-            'git  -C {0} branch --contains {1}'.format(cloned_repo_dir, commit),
+            'git  -C {0} branch --contains {1}'.format(cloned_repo_dir,
+                                                       commit),
             shell=True).splitlines()
 
         return {'matched_files': matched_files,
@@ -151,18 +152,15 @@ def _write_results(results, cloned_repo_dir, results_file_path,
                 commit_sha, filepath, line_num = match.rsplit(':')
                 username, email, commit_time = \
                     _get_user_details(cloned_repo_dir, commit_sha)
-                result = dict(email=email,
-                              filepath=filepath,
-                              username=username,
-                              commit_sha=commit_sha,
+                result = dict(email=email, filepath=filepath,
+                              username=username, commit_sha=commit_sha,
                               commit_time=commit_time,
                               repository_name=repo_name,
                               branches_names=branches_names,
                               organization_name=organization,
                               blob_url=constants.GITHUB_BLOB_URL.format(
-                                  organization,
-                                  repo_name,
-                                  commit_sha, filepath))
+                                  organization, repo_name, commit_sha,
+                                  filepath))
                 result_count += 1
                 db.insert(result)
         except (IndexError, TypeError):

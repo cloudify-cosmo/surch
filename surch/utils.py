@@ -54,6 +54,7 @@ def setup_logger(verbose=False):
         logger.setLevel(logging.DEBUG)
     return logger
 
+
 logger = setup_logger()
 
 
