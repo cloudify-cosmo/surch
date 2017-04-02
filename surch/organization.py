@@ -16,8 +16,6 @@
 import os
 
 import requests
-from multiprocessing.dummy import Pool
-from multiprocessing import cpu_count
 
 from .exceptions import SurchError
 from . import repo, utils, constants
@@ -141,15 +139,10 @@ def search(git_item_name, git_user, git_password, search_list,
                                             repos_to_exclude=repos_to_skip)
 
     for repo_url in repos_url_list:
-        pool = Pool(cpu_count())
-        results = pool.map(repo.search(
-            repo_url=repo_url, search_list=search_list,
-            results_file_path=results_file_path,
-            cloned_repo_dir=cloned_repos_dir, verbose=verbose,
-            remove_clone_dir=False, consolidate_log=True,
-            from_org=True, remove_per_repo=remove_per_repo))
-        pool.close()
-        pool.join()
-        return results
+        repo.search(repo_url=repo_url, search_list=search_list,
+                    results_file_path=results_file_path,
+                    cloned_repo_dir=cloned_repos_dir, verbose=verbose,
+                    remove_clone_dir=False, consolidate_log=True,
+                    from_org=True, remove_per_repo=remove_per_repo)
     utils._remove_repos_folder(cloned_repos_dir, remove_clones_dir)
     utils._remove_repos_folder(cloned_repos_dir, remove_per_member)

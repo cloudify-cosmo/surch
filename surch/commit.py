@@ -120,7 +120,7 @@ def web_search(owner_name, repo_name, search_list, commit_sha, git_user=None,
     files_list = []
     if not git_user or not git_password:
         logger.error('Choosing not to provide GitHub credentials limits '
-                     'requests to GitHub to 60/h. This might affect cloning.')
+                     'requests to GitHub to 60/h.')
         raise SurchError
 
     results_file_path = results_file_path or constants.RESULTS_PATH
