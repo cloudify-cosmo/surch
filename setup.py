@@ -48,7 +48,7 @@ setup(
     install_requires=[
         "sh==1.11",
         "click==6.6",
-        "pyyaml==3.11",
+        "pyyaml==5.1",
         "hvac==0.2.12",
         "tinydb==3.1.3",
         "requests==2.20.0",
