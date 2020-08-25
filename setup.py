@@ -51,7 +51,7 @@ setup(
         "pyyaml==3.11",
         "hvac==0.2.12",
         "tinydb==3.1.3",
-        "requests==2.9.1",
+        "requests==2.20.0",
         "retrying==1.3.3",
     ]
 )
