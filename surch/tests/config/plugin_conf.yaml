@@ -1,0 +1,12 @@
+search_list:
+  - string-1
+  - string-1
+
+vault:
+  vault_url: 'http://vault.com:8200'
+  vault_token: 'gserl7zc-ipu2-qq2l-y1vb-jqtg77rh5pcb'
+  secret_path: 'secret_path'
+
+pagerduty:
+  api_key: 'zOjKTFAIRSufjZeAExYD'
+  service_key: 'qq6ed4o6ytle6ohmusmhtm41n3fuihef'

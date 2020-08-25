@@ -28,8 +28,7 @@ class Pagerduty(object):
         self.dicts_number =\
             self.count_dicts_in_results_file(results_file_path)
         self.today_date = time.strftime('%Y-%m-%d')
-        self.msg = msg or 'Surch alert run check on {0}' \
-                          ' and found {1} ' \
+        self.msg = msg or 'Surch alert run check on {0} and found {1} ' \
                           'commits.'.format(self.today_date, self.dicts_number)
         self.api_key = api_key
         self.service_key = service_key
@@ -53,20 +52,32 @@ class Pagerduty(object):
             "client": "Surch service",
             "details": {"ping time": "1500ms",
                         "load avg": 0.75}})
-        requests.post(
-            'https://events.pagerduty.com/'
-            'generic/2010-04-15/create_event.json',
-            headers=headers, data=payload, )
+        try:
+            api_request = requests.post(
+                'https://events.pagerduty.com/'
+                'generic/2010-04-15/create_event.json',
+                headers=headers, data=payload, )
+        except requests.exceptions.ConnectionError:
+            return 'no_internet'
+        return api_request
 
     def trigger(self):
         if self.dicts_number > 0:
-            self.trigger_incident()
-            logger.info('Pagerduty alert: "{0}"'.format(self.msg))
+            api_request = self.trigger_incident()
+            if '<Response [200]>' in str(api_request):
+                logger.info('Pagerduty alert: "{0}"'.format(self.msg))
+            if 'no_internet' in str(api_request):
+                logger.error('Pagerduty - No internet connection')
+                return str(api_request)
+            else:
+                logger.error('Pagerduty - {0}'.format(api_request))
+            return str(api_request)
         else:
             logger.info('Results file is empty')
+            return('file is empty')
 
 
 def trigger(results_file_path, api_key, service_key, msg=None):
     pager = Pagerduty(results_file_path=results_file_path, api_key=api_key,
                       service_key=service_key, msg=msg)
-    pager.trigger()
+    return pager.trigger()

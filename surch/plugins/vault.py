@@ -45,13 +45,15 @@ class Vault(object):
                 secret_names.extend(
                     [os.path.join(secret, key) for key in keys])
                 continue
-
             secret_from_vault = self.client.read(
                 '{0}/{1}'.format(self.secret_path, secret))
             secret_from_vault = secret_from_vault['data']
             for key, value in secret_from_vault.items():
                 for regex in self.key_list:
-                    p = re.compile(regex.lower())
+                    try:
+                        p = re.compile(regex.lower())
+                    except:
+                        pass
                     if value:
                         if p.match(key.lower()):
                             if 'ssh-rsa' not in value.lower():
